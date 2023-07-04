@@ -1,0 +1,254 @@
+---
+title: "ofav_genome_install_programs_pegasus"
+output: html_document
+date: "2023-02-16"
+---
+
+#1. Package Installations
+
+*1.1* - Hifiasm 
+*1.2* - BUSCO
+*1.3* - Quast
+*1.4* - Ragtag
+*1.5* - Repeatmasker
+*1.6* - Repeatmodeler
+*1.7*
+
+
+```{bash}
+conda create -n cactus_env
+
+conda activate cactus_env
+conda install -c anaconda python
+conda install -c conda-forge gcc
+conda install -c conda-forge hdf5
+conda activate cactus_env
+
+cd cactus_manual_install/bin
+wget https://github.com/ComparativeGenomicsToolkit/cactus/releases/download/v2.4.2/cactus-bin-legacy-v2.4.2.tar.gz
+tar -xzf cactus-bin-legacy-v2.4.2.tar.gz
+cd cactus-bin-legacy-v2.4.2
+
+python3 -m pip install -U setuptools pip
+python3 -m pip install -U .
+python3 -m pip install -U -r ./toil-requirement.txt
+
+
+## setup this in the miniconda environment bin and the cactus download bin
+cd bin && for i in wigToBigWig faToTwoBit bedToBigBed bigBedToBed bedSort hgGcPercent; do wget -q http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/${i}; chmod ugo+x ${i}; done
+```
+
+
+##1.1 Hifiasm 
+https://hifiasm.readthedocs.io/en/latest/ 
+
+```{bash}
+conda create -n hifiasm_env -c conda-forge -c bioconda hifiasm
+
+
+## to activate
+conda activate hifiasm_env
+
+## to deactivate active environment
+conda deactivate
+```
+
+This is located in 
+/nethome/bdy8/miniconda3/bin
+
+
+```{r}
+conda create -n canu_env -c conda-forge -c bioconda -c defaults canu
+```
+
+
+##1.2 BUSCO
+https://busco.ezlab.org/busco_userguide.html#conda-package
+
+```{bash}
+## Installuing into a conda environment
+conda create -n busco_env -c conda-forge -c bioconda busco=5.4.4
+
+## to activate
+conda activate busco_env
+
+## to deactivate active environment
+conda deactivate
+```
+
+This is located in 
+/nethome/bdy8/miniconda3/bin
+
+##1.3 - Quast 
+https://quast.sourceforge.net/index.html
+
+```{bash}
+#pip install quast
+#pip show quast
+conda create -n quast_env -c conda-forge -c bioconda quast
+
+## to activate
+conda activate quast_env
+
+## to deactivate active environment
+conda deactivate
+```
+
+This is located in 
+/nethome/bdy8/miniconda3/lib/python3.9/site-packages/
+
+
+##1.4 - Ragtag
+
+DID NOT RUN A ENVIRONMENT FOR THIS< INSTALLED MINIMAP@ AND RAGTAG THROUGH CONDA AND IT WORKED. 
+```{bash}
+ conda create -n ragtag_env -c conda-forge -c bioconda ragtag
+ 
+## to activate
+conda activate ragtag_env
+
+## to deactivate active environment
+conda deactivate
+```
+
+This is located in 
+/nethome/bdy8/miniconda3/lib/python3.9/site-packages
+
+
+##1.5 - Repeatmasker
+
+```{bash}
+conda create -n repeatmasker_env -c conda-forge -c bioconda repeatmasker
+
+## to activate
+conda activate repeatmasker_env
+
+## to deactivate active environment
+conda deactivate
+```
+
+environment location: /nethome/bdy8/miniconda3/envs/repeatmasker_env
+
+
+##1.6 - Repeatmodeler
+
+```{bash}
+conda create -n repeatmodeler_env -c conda-forge -c bioconda repeatmodeler
+
+## to activate
+conda activate repeatmodeler_env
+
+## to deactivate active environment
+conda deactivate
+```
+
+environment location: /nethome/bdy8/miniconda3/envs/repeatmodeler_env
+
+
+##1.7 Blast
+
+```{bash}
+conda create -n blast_env -c conda-forge -c bioconda blast
+
+## to activate
+conda activate blast_env
+
+## to deactivate active environment
+conda deactivate
+```
+
+```{bash}
+conda create -n seqtk_env -c conda-forge -c bioconda seqtk
+```
+
+
+## 1.8 mitohifi
+
+```{bash }
+## need to add blast to the yml file
+conda env create -n mitohifi_env -f mitohifi_env.yml
+
+conda activate mitohifi_env
+
+## cd into where you want this installed
+git clone https://github.com/marcelauliano/MitoHiFi.git
+export PATH=</path/to/MitoFinder>:${PATH}
+```
+
+
+## 1.9 MitoZ
+
+This was done locally for mitogenome viewing
+
+```{bash}
+conda create -n mitoz_env -c bioconda mitoz
+```
+
+Do this to get arounf the library missing problem
+
+```{bash}
+mamba create -n funannotate_env -c conda-forge -c bioconda python=3.8 funannotate
+mkdir ~/funannotate_db
+
+```
+
+
+
+
+
+
+
+### FUnannotate 
+Preparing transaction: done
+Verifying transaction: done
+Executing transaction: -  
+For Linux 64, Open MPI is built with CUDA awareness but this support is disabled by default.
+To enable it, please set the environment variable OMPI_MCA_opal_cuda_support=true before
+launching your MPI processes. Equivalently, you can set the MCA parameter in the command line:
+mpiexec --mca opal_cuda_support 1 ...
+ 
+In addition, the UCX support is also built but disabled by default.
+To enable it, first install UCX (conda install -c conda-forge ucx). Then, set the environment
+variables OMPI_MCA_pml="ucx" OMPI_MCA_osc="ucx" before launching your MPI processes.
+Equivalently, you can set the MCA parameters in the command line:
+mpiexec --mca pml ucx --mca osc ucx ...
+Note that you might also need to set UCX_MEMTYPE_CACHE=n for CUDA awareness via UCX.
+Please consult UCX's documentation for detail.
+ 
+##########################################################################################
+All Users:
+  You will need to setup the funannotate databases using funannotate setup.
+  The location of these databases on the file system is your decision and the
+  location can be defined using the FUNANNOTATE_DB environmental variable.
+  
+  To set this up in your conda environment you can run the following:
+    echo "export FUNANNOTATE_DB=/nethome/bdy8/funannotate_db" > /nethome/bdy8/mambaforge/envs/funannotate_env/etc/conda/activate.d/funannotate.sh
+    echo "unset FUNANNOTATE_DB" > /nethome/bdy8/mambaforge/envs/funannotate_env/etc/conda/deactivate.d/funannotate.sh
+  
+  You can then run your database setup using funannotate:
+    funannotate setup -i all
+    
+  Due to licensing restrictions, if you want to use GeneMark-ES/ET, you will need to install manually:
+  download and follow directions at http://topaz.gatech.edu/GeneMark/license_download.cgi
+  ** note you will likely need to change shebang line for all perl scripts:
+    change: #!/usr/bin/perl to #!/usr/bin/env perl
+     
+      
+Mac OSX Users:
+  Augustus and Trinity cannot be properly installed via conda/bioconda at this time. However,
+  they are able to be installed manually using a local copy of GCC (gcc-8 in example below).
+
+  Install augustus using this repo:
+    https://github.com/nextgenusfs/augustus
+  
+  To install Trinity v2.8.6, download the source code and compile using GCC/G++:
+    wget https://github.com/trinityrnaseq/trinityrnaseq/releases/download/v2.8.6/trinityrnaseq-v2.8.6.FULL.tar.gz
+    tar xzvf trinityrnaseq-v2.8.6.FULL.tar.gz
+    cd trinityrnaseq-v2.8.6
+    make CC=gcc-8 CXX=g++-8
+    echo "export TRINITY_HOME=/your/path" > /nethome/bdy8/mambaforge/envs/funannotate_env/etc/conda/activate.d/trinity.sh
+    echo "unset TRINITY_HOME" > /nethome/bdy8/mambaforge/envs/funannotate_env/etc/conda/deactivate.d/trinity.sh    
+
+##########################################################################################
+
+done

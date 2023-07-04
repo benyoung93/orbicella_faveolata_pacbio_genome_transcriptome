@@ -1,0 +1,2380 @@
+---
+title: "Orbicella_faveolata_genome"
+output: html_document
+date: "2023-06-06"
+---
+
+##1 Mitochondiral Genome 
+
+Bit of a nusiance to install, here are some added fixes I had to do 
+- add blast to the yml conda environment file
+- install mitofinder following mitofinder instructions (on the mitofinder github page)
+- in the .job file make sure to have `module load java`. This fixes the annotation step. 
+
+Another intersting thing is the *Orbicella faveolata* mito genome is awful. Using this mitohifi did not work succesfully. I then ran with 4 other coral mitochondiral genomes and the results were as expected. 
+- Platygyra carnosa (NC_020049.1)
+- Favites abdita (NC_035879.1)
+- Dipsastraea favus (NC_046690.1)
+- Orbicella faveolata Pa00-9 ()
+
+To Do: Align my mitochondrial genome to the old ofav one (minimap2, mummer) and show how it is not good with alignment. 
+
+###1.A Generating the mitochondrial genome for ofav
+
+```{bash getting a reference for mitohifi, include = F}
+findMitoReference.py --species "Platygyra carnosa" \
+--email bdy8@miami.edu \
+--outfolder ref_mito_genome/
+
+findMitoReference.py --species "Favites abdita" \
+--email bdy8@miami.edu \
+--outfolder ref_mito_genome/
+
+findMitoReference.py --species "Dipsastraea favus" \
+--email bdy8@miami.edu \
+--outfolder ref_mito_genome/
+
+findMitoReference.py --species "Orbicella faveolata" \
+--email bdy8@miami.edu \
+--outfolder ref_mito_genome/
+```
+
+```{bash running mitohifi for Platygyra carnosa}
+#!/bin/bash
+#BSUB -P omics
+#BSUB -J mitoHiFi_rr_pc
+#BSUB -e /scratch/projects/omics/ofav_genome/error_and_outputs/mitoHiFi_rr_pc.err
+#BSUB -o /scratch/projects/omics/ofav_genome/error_and_outputs/mitoHiFi_rr_pc.out
+#BSUB -W 48:00
+#BSUB -n 8
+#BSUB -q general
+
+module load java
+cd /scratch/projects/omics/ofav_genome/mito_gen_pc
+## from raw reads
+python ~/programs/MitoHiFi/mitohifi.py -r /scratch/projects/omics/ofav_genome/raw_reads/m64202e_221113_151152.hifi_reads.fastq \
+-f /scratch/projects/omics/ofav_genome/mito_gen_pc/ref/NC_020049.1.fasta \
+-g /scratch/projects/omics/ofav_genome/mito_gen_pc/ref/NC_020049.1.gb \
+-t 8 \
+-o 5 #invertebrate mitochondrial code
+```
+
+```{bash mitohifi for Favites abdita}
+#!/bin/bash
+#BSUB -P omics
+#BSUB -J mitoHiFi_rr_fa
+#BSUB -e /scratch/projects/omics/ofav_genome/error_and_outputs/mitoHiFi_rr_fa.err
+#BSUB -o /scratch/projects/omics/ofav_genome/error_and_outputs/mitoHiFi_rr_fa.out
+#BSUB -W 48:00
+#BSUB -n 8
+#BSUB -q general
+
+module load java
+cd /scratch/projects/omics/ofav_genome/mito_gen_fa
+## from raw reads
+python ~/programs/MitoHiFi/mitohifi.py -r /scratch/projects/omics/ofav_genome/raw_reads/m64202e_221113_151152.hifi_reads.fastq \
+-f /scratch/projects/omics/ofav_genome/mito_gen_fa/ref/NC_035879.1.fasta \
+-g /scratch/projects/omics/ofav_genome/mito_gen_fa/ref/NC_035879.1.gb \
+-t 8 \
+-o 5 #invertebrate mitochondrial code
+```
+
+```{bash mitohifi for Dipsastraea favus}
+#!/bin/bash
+#BSUB -P omics
+#BSUB -J mitoHiFi_rr
+#BSUB -e /scratch/projects/omics/ofav_genome/error_and_outputs/mitoHiFi_rr.err
+#BSUB -o /scratch/projects/omics/ofav_genome/error_and_outputs/mitoHiFi_rr.out
+#BSUB -W 48:00
+#BSUB -n 8
+#BSUB -q general
+
+module load java
+cd /scratch/projects/omics/ofav_genome/mito_gen_mer
+## from raw reads
+python ~/programs/MitoHiFi/mitohifi.py -r /scratch/projects/omics/ofav_genome/raw_reads/m64202e_221113_151152.hifi_reads.fastq \
+-f /scratch/projects/omics/ofav_genome/mito_gen_mer/ref/NC_046690.1.fasta \
+-g /scratch/projects/omics/ofav_genome/mito_gen_mer/ref/NC_046690.1.gb \
+-t 8 \
+-o 5 #invertebrate mitochondrial code
+```
+
+```{bash mitohifi ofav}
+#!/bin/bash
+#BSUB -P omics
+#BSUB -J mitoHiFi_rr
+#BSUB -e /scratch/projects/omics/ofav_genome/error_and_outputs/mitoHiFi_rr.err
+#BSUB -o /scratch/projects/omics/ofav_genome/error_and_outputs/mitoHiFi_rr.out
+#BSUB -W 48:00
+#BSUB -n 8
+#BSUB -q general
+
+module load java
+cd /scratch/projects/omics/ofav_genome/mito_from_rr
+## from raw reads
+python ~/programs/MitoHiFi/mitohifi.py -r /scratch/projects/omics/ofav_genome/raw_reads/m64202e_221113_151152.hifi_reads.fastq \
+-f /scratch/projects/omics/ofav_genome/mito_from_rr/ref/NC_007226.1.fasta \
+-g /scratch/projects/omics/ofav_genome/mito_from_rr/ref/NC_007226.1.gb \
+-t 8 \
+--circular-size 30000 \
+-o 5 #invertebrate mitochondrial code
+```
+
+
+###1.B Phylogenetic tree of scleractinia coral
+
+```{bash making conda environment with all relevant packages, include = F}
+conda create -n mitogenome_phylogeny_env -c bioconda entrez-direct mafft raxml
+conda activate mitogenome_phylogeny_env
+```
+
+```{bash getting all the mitogenome sequences, include = F}
+#!/bin/bash
+#BSUB -P omics
+#BSUB -J mito_genome_phylogeny_gets
+#BSUB -e /scratch/projects/omics/ofav_genome/error_and_outputs/mito_genome_phylogeny_gets.err
+#BSUB -o /scratch/projects/omics/ofav_genome/error_and_outputs/mito_genome_phylogeny_gets.out
+#BSUB -W 48:00
+#BSUB -n 8
+#BSUB -q bigmem
+#BSUB -R "rusage[mem=20000]"
+
+mkdir /scratch/projects/omics/ofav_genome/mito_genome_phylo
+cd /scratch/projects/omics/ofav_genome/mito_genome_phylo
+
+export ENTREZ_EMAIL="bdy8@miami.edu" # Set your email address for NCBI Entrez
+
+# manually made the text file, was easier than messing around with realloc error
+efetch -db nucleotide \
+-id $(cat mito_gen_an_list.txt) \ 
+-format fasta  > scleractinian_mitogenomes.fasta
+
+# getting the corresponding gb files as well
+efetch -db nucleotide \
+-id $(cat mito_gen_an_list.txt) \
+-format gb > mitochondrial_genomes.gbk
+
+awk '/^>/ {if (seqlen) print id, seqlen; id = substr($0, 2); seqlen = 0; } \
+     /^[^>]/ { seqlen += length($0) } \
+     END { if (seqlen) print id, seqlen }' scleractinian_mitogenomes.fasta > genomes_downloaded_and_length.txt
+```
+
+```{bash mafft for alignment, include = F}
+#!/bin/bash
+#BSUB -P omics
+#BSUB -J mito_genome_phylogeny_alignmnet
+#BSUB -e /scratch/projects/omics/ofav_genome/error_and_outputs/mito_genome_phylogeny_alignment.err
+#BSUB -o /scratch/projects/omics/ofav_genome/error_and_outputs/mito_genome_phylogeny_alignmnet.out
+#BSUB -W 48:00
+#BSUB -n 8
+#BSUB -q bigmem
+#BSUB -R "rusage[mem=20000]"
+
+cd /scratch/projects/omics/ofav_genome/mito_genome_phylo
+
+#cat scleractinian_mitogenomes.fasta ../mito_gen_fa/final_mitogenome.fasta | awk '/^>/ {if (seq!="") print seq; print; seq=""; next; } { seq = seq $0; } END { print seq; }' > scleractinian_mitogenomes_and_new.fasta
+
+#awk '/^>/ {if (seqlen) print id, seqlen; id = substr($0, 2); seqlen = 0; } \
+#     /^[^>]/ { seqlen += length($0) } \
+#     END { if (seqlen) print id, seqlen }' scleractinian_mitogenomes_and_new.fasta > genomes_downloaded_and_length_andnew.txt
+
+# Align the sequences using MAFFT
+mafft scleractinian_mitogenomes_and_new.fasta > scleractinian_mitogenomes_aligned.fasta
+echo "Alignment complete."
+```
+
+```{bash getting rif od rubbish so alignment goes quicker, include = F}
+#!/bin/bash
+#BSUB -P omics
+#BSUB -J mito_genome_phylogeny_trimal
+#BSUB -e /scratch/projects/omics/ofav_genome/error_and_outputs/mito_genome_phylogeny_trimal.err
+#BSUB -o /scratch/projects/omics/ofav_genome/error_and_outputs/mito_genome_phylogeny_trimal.out
+#BSUB -W 48:00
+#BSUB -n 8
+#BSUB -q bigmem
+#BSUB -R "rusage[mem=20000]"
+
+cd /scratch/projects/omics/ofav_genome/mito_genome_phylo
+
+trimal -in scleractinian_mitogenomes_aligned.fasta \
+-out scleractinian_mitogenomes_aligned_clean.fasta \
+-gt 0.3 \
+-st 0.001 \
+-cons 30
+```
+
+```{bash raxml tree generation, include = F}
+#!/bin/bash
+#BSUB -P omics
+#BSUB -J mito_genome_phylogeny_treegen
+#BSUB -e /scratch/projects/omics/ofav_genome/error_and_outputs/mito_genome_phylogeny_treegen.err
+#BSUB -o /scratch/projects/omics/ofav_genome/error_and_outputs/mito_genome_phylogeny_treegen.out
+#BSUB -W 48:00
+#BSUB -n 4
+#BSUB -q bigmem
+#BSUB -R "rusage[mem=10000]"
+
+cd /scratch/projects/omics/ofav_genome/mito_genome_phylo
+
+# Generate a phylogenetic tree using RAxML
+raxmlHPC-PTHREADS -T 4 \
+-f a \
+-x 10 \
+-p 10 \
+-# 100 \
+-s scleractinian_mitogenomes_aligned_clean.fasta \
+-n scl_mito_tree \
+-m GTRGAMMAI
+echo "Tree generation complete."
+```
+
+So this aboves gives the new PACBIO genomes as in the wrong place. (Cnat and the Ofav one)
+
+As mitochondrial genomes are circular, this may be due to mafft aligning from different start points. I therfore need to make sure they all start at the same point, and then try the tree. I found two tools but used the Circlate one (Mars did not work very well). 
+
+Ive found two tools 
+- MARS - https://github.com/lorrainea/mars
+  git clone the link and follow instructions in the install section. I made a conda environment with it all. 
+  The corrected sequences can then be used in MAFFT and RAxML
+  
+- Circlate - https://github.com/sanger-pathogens/circlator
+  Used for assembly of genomes from raw reads, but using the `fixstart` parameter is good here. 
+  For install just made a conda environment. 
+  Did the correction on the mito genome merged fasta, then MAFFT and then RAxML. 
+  
+```{bash circlate commands, inlclude = F}
+circlator fixstart sc_mg_new_cn.fasta sc_mg_new_cn_circl
+mafft sc_mg_new_cn_circl.fasta > sc_mg_new_cn_circl_aligned.fasta
+#(may need to do a clean in here for the aligned files, is working so far). If not use in trimal. 
+raxmlHPC-PTHREADS -T 4 \
+-f a \
+-x 10 \
+-p 10 \
+-# 100 \
+-s sc_mg_new_cn_circl_aligned.fasta \
+-n scl_mito_tree_circ \
+-m GTRCAT
+```
+
+
+## 2. De-novo Genome Assembly
+###2.A - Removal of contaminant reads form the raw hifi reads
+
+```{bash changing from fastq to fasta using seqtk, include = F}
+seqtk seq -a m64202e_221113_151152.hifi_reads.fastq > m64202e_221113_151152.hifi_reads.fasta
+```
+
+```{bash getting the summary of the read lengths of the hifi reads, include = F}
+awk '/^>/{printf("%s\t",substr($0,2));next;} {print length}' m64202e_221113_151152.hifi_reads.fasta > rr_read_lengths.txt
+```
+
+```{r package loading for r, include = F}
+library(tidyverse)
+```
+
+```{r reading in to see number of raw reads, echo = F}
+read.table(file = "/Users/benjamin.d.young/Dropbox/NOAA_postdoc/projects/ofav_genome_master/contaminant_screening/rr_read_lengths.txt", 
+           header = F) %>% 
+  dplyr::rename("hifi_read_name" = 1, 
+         "length" = 2) -> hifi_read_length
+nrow(hifi_read_length)
+mean(hifi_read_length$length)
+sum(hifi_read_length$length) #need this for the NCBI submission
+```
+
+```{r histogram for read bins from raw hifi data, echo = F}
+ggplot(data = hifi_read_length, 
+       aes(x = length, fill = "blue")) +
+  geom_histogram(binwidth = 2000) + 
+  labs(x = "Raw Read Length", y = "Count", title = "Histogram of Raw HiFi Read Lengths") + 
+  scale_fill_manual(values = c("blue")) + 
+  scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
+```
+
+```{bash blasting the hifi fasta, include = F}
+#!/bin/bash
+#BSUB -P omics
+#BSUB -J contaminant_blast_rr
+#BUSB -e /scratch/projects/omics/ofav_genome/error_and_outputs/contam_blast_pv_euk_merged_rr.err
+#BSUB -o /scratch/projects/omics/ofav_genome/error_and_outputs/contam_blast_pv_euk_merged_rr.out
+#BSUB -q general
+#BSUB -n 15
+#BSUB -W 48:00
+
+#mkdir /scratch/projects/omics/ofav_genome/contaminant_removal/raw_reads
+
+~/miniconda3/envs/blast_env/bin/blastn  -query /scratch/projects/omics/ofav_genome/raw_reads/m64202e_221113_151152.hifi_reads.fasta \
+-subject /scratch/projects/omics/ofav_genome/databases/contam_in_euks.fa \
+-task megablast \
+-outfmt 6 \
+-evalue 4 \
+-perc_identity 90 \
+-num_threads 15 \
+-out /scratch/projects/omics/ofav_genome/contaminant_removal/raw_reads/contaminant_hits_ineuks_rr.txt
+
+awk '{ if( ($4 >= 50 && $4 <= 99 && $3 >=98 ) ||
+         ($4 >= 100 && $4 <= 199 && $3 >= 94 ) ||
+         ($4 >= 200 && $3 >= 90) )  {print $0}
+    }' /scratch/projects/omics/ofav_genome/contaminant_removal/raw_reads/contaminant_hits_ineuks_rr.txt > \
+/scratch/projects/omics/ofav_genome/contaminant_removal/raw_reads/contaminants_pass_filter_ineuks_rr.txt
+
+#cd /scratch/projects/omics/ofav_genome/databases
+#~/miniconda3/envs/blast_env/bin/update_blastdb.pl --decompress ref_prok_rep_genomes
+#~/miniconda3/envs/blast_env/bin/update_blastdb.pl --decompress ref_viruses_rep_genomes
+
+
+#!/bin/bash
+#BSUB -P omics
+#BSUB -J contaminant_blast_rr
+#BUSB -e /scratch/projects/omics/ofav_genome/error_and_outputs/contam_blast_pv_euk_merged_rr.err
+#BSUB -o /scratch/projects/omics/ofav_genome/error_and_outputs/contam_blast_pv_euk_merged_rr.out
+#BSUB -q general
+#BSUB -n 15
+#BSUB -W 48:00
+
+~/miniconda3/envs/blast_env/bin/blastn  -query /scratch/projects/omics/ofav_genome/raw_reads/m64202e_221113_151152.hifi_reads.fasta \
+-db /scratch/projects/omics/ofav_genome/databases/ref_viruses_rep_genomes \
+-outfmt 6 \
+-evalue 20 \
+-num_threads 15 \
+-out /scratch/projects/omics/ofav_genome/contaminant_removal/raw_reads/viral_contaminant_hits_rr.txt
+
+
+#!/bin/bash
+#BSUB -P omics
+#BSUB -J contaminant_blast_rr_mito
+#BUSB -e /scratch/projects/omics/ofav_genome/error_and_outputs/contam_blast_pv_euk_merged_rr_mito.err
+#BSUB -o /scratch/projects/omics/ofav_genome/error_and_outputs/contam_blast_pv_euk_merged_rr_mito.out
+#BSUB -q general
+#BSUB -n 15
+#BSUB -W 48:00
+#megablast against mitogenome assembly
+
+~/miniconda3/envs/blast_env/bin/blastn  -query /scratch/projects/omics/ofav_genome/raw_reads/m64202e_221113_151152.hifi_reads.fasta \
+-subject /scratch/projects/omics/ofav_genome/mito_gen_fa/final_mitogenome.fasta \
+-task megablast \
+-outfmt 6 \
+-evalue 1e-4 \
+-perc_identity 90 \
+-num_threads 8 \
+-out mito_hits_rr.txt
+```
+
+The prokaryotic blast hit wall times, thus I split up the file into 100 and did parallel jobs. 
+
+```{bash prok splitting up for blast, include=F}
+#!/bin/bash
+#BSUB -P omics
+#BSUB -J contam_blast_prok_loop
+#BUSB -e /scratch/projects/omics/ofav_genome/error_and_outputs/contam_blast_prok_loop.err
+#BSUB -o /scratch/projects/omics/ofav_genome/error_and_outputs/contam_blast_prok_loop.out
+#BSUB -q general
+
+cd /scratch/projects/omics/ofav_genome/raw_reads
+mkdir rr_split
+seqkit split2 m64202e_221113_151152.hifi_reads.fasta -p 100 -f -O rr_split
+
+# making a list of sample names
+PALMATA=`ls /scratch/projects/omics/ofav_genome/raw_reads/rr_split | sed 's/\(.*\).fasta/\1/g'`
+
+echo "files being blasted"
+echo $PALMATA
+
+for PALPAL in $PALMATA
+do
+echo "$PALPAL"
+echo '#!/bin/bash' > /scratch/projects/omics/ofav_genome/scripts/blast_loop/"$PALPAL"_blast_prok.sh
+echo '#BSUB -J '"$PALPAL"'_prok_blast' >> /scratch/projects/omics/ofav_genome/scripts/blast_loop/"$PALPAL"_blast_prok.sh
+echo '#BSUB -e /scratch/projects/omics/ofav_genome/error_and_outputs/blast_loop/'"$PALPAL"'_blast_prok.err' >> /scratch/projects/omics/ofav_genome/scripts/blast_loop/"$PALPAL"_blast_prok.sh
+echo '#BSUB -o /scratch/projects/omics/ofav_genome/error_and_outputs/blast_loop/'"$PALPAL"'_blast_prok.out' >> /scratch/projects/omics/ofav_genome/scripts/blast_loop/"$PALPAL"_blast_prok.sh
+echo '#BSUB -q general'  >> /scratch/projects/omics/ofav_genome/scripts/blast_loop/"$PALPAL"_blast_prok.sh
+echo '#BSUB -n 10' >> /scratch/projects/omics/ofav_genome/scripts/blast_loop/"$PALPAL"_blast_prok.sh
+echo '#BSUB -W 48:00' >> /scratch/projects/omics/ofav_genome/scripts/blast_loop/"$PALPAL"_blast_prok.sh
+echo '#BSUB -P omics' >> /scratch/projects/omics/ofav_genome/scripts/blast_loop/"$PALPAL"_blast_prok.sh
+
+echo '~/miniconda3/envs/blast_env/bin/blastn  -query /scratch/projects/omics/ofav_genome/raw_reads/rr_split/'"${PALPAL}"'.fasta \
+-db /scratch/projects/omics/ofav_genome/databases/ref_prok_rep_genomes \
+-outfmt 6 \
+-evalue 20 \
+-num_threads 10 \
+-out /scratch/projects/omics/ofav_genome/contaminant_removal/raw_reads/prok_blast/'"${PALPAL}"'_prok_cont_hits_rr.txt' >> /scratch/projects/omics/ofav_genome/scripts/blast_loop/"$PALPAL"_blast_prok.sh
+bsub < /scratch/projects/omics/ofav_genome/scripts/blast_loop/"$PALPAL"_blast_prok.sh
+done
+```
+
+```{bash making one mega prok file, include = F}
+cd /scratch/projects/omics/ofav_genome/contaminant_removal/raw_reads/prok_blast
+cat * > ../prok_res_all.txt
+```
+
+```{bash combining the prok and viral results, include=F}
+## Do this once the viral and prokaryotic blasts have run. 
+cd /scratch/projects/omics/ofav_genome/contaminant_removal/raw_reads
+cat viral_contaminant_hits_rr.txt prok_res_all.txt > all_contaminant_hits_rr.txt
+awk '$12 > 1000 {print $0}' all_contaminant_hits_rr.txt > contaminant_hits_pv_passfilter_rr.txt
+```
+
+```{r reading in and viewing the euk hits that pass the threshold, echo = F}
+read.table(file = "/Users/benjamin.d.young/Dropbox/NOAA_postdoc/projects/ofav_genome_master/contaminant_screening/contaminants_pass_filter_ineuks_rr.txt", 
+           header = F) %>% 
+  dplyr::rename("read_ID" = 1, 
+         "subject_ID" = 2, 
+         "percent_identity" = 3, 
+         "align_length" = 4, 
+         "mismatches" = 5, 
+         "gap_open" = 6, 
+         "query_start" = 7, 
+         "query_end" = 8, 
+         "subject_start" = 9, 
+         "subject_end" = 10, 
+         "e_value" = 11, 
+         "bit_Score" = 12) -> contam_euk_pass_filt
+# View(contam_euk_pass_filt) 
+
+contam_euk_pass_filt %>% 
+  summarise(read_ID = unique(read_ID)) -> euk_hit_for_removal
+# View(euk_hit_for_removal)
+
+# View(hifi_read_length)
+print(hifi_read_length %>% 
+        dplyr::filter(hifi_read_name %in% "m64202e_221113_151152/102828787/ccs"))
+
+ggplot(contam_euk_pass_filt %>% 
+         mutate(subject_ID = as.factor(subject_ID))) + 
+  geom_rect(aes(xmin=query_start, 
+                xmax=query_end, 
+                ymin=as.numeric(subject_ID)-0.4, 
+                ymax=as.numeric(subject_ID)+0.4), 
+            fill="gray60") + 
+  geom_segment(aes(x=query_start, 
+                   y=subject_ID, 
+                   xend=query_end, 
+                   yend=subject_ID), size=2, color="blue") +
+  scale_y_discrete(expand = c(0.2, 0.2), 
+                   guide = guide_axis(n.dodge = 3)) +
+  scale_x_continuous(limits = c(0, 4153), 
+                     expand = c(0, 0), 
+                     labels = scales::number_format()) + 
+  theme_bw() +
+  theme(text = element_text(size = 5))
+```
+
+Seems the contam in euk is only a very short section on this read. I am going to purge this out because why not. Even though there were no hits for this for the contig assembly. 
+
+```{r reading in and viewing the mitochondrial hits that pass the threshold, echo = F}
+read.table(file = "/Users/benjamin.d.young/Dropbox/NOAA_postdoc/projects/ofav_genome_master/contaminant_screening/mito_hits_rr.txt", 
+           header = F) %>% 
+  dplyr::rename("read_ID" = 1, 
+         "subject_ID" = 2, 
+         "percent_identity" = 3, 
+         "align_length" = 4, 
+         "mismatches" = 5, 
+         "gap_open" = 6, 
+         "query_start" = 7, 
+         "query_end" = 8, 
+         "subject_start" = 9, 
+         "subject_end" = 10, 
+         "e_value" = 11, 
+         "bit_Score" = 12) %>% 
+  dplyr::filter(bit_Score > 999) %>% 
+  group_by(read_ID) %>%
+  summarise(count = n()) -> mito_hit_for_removal
+# View(mito_hit_for_removal)
+
+# mito_hit_for_removal %>% 
+#   dplyr::select(1) %>% 
+#   write.table(.,
+#               file = "/Users/benjamin.d.young/Desktop/ofav_genome_master/raw_reads_contam_removal/mito_hit_for_removal.txt",
+#               col.names = F, 
+#               row.names = F, 
+#               quote = F)
+```
+
+```{r reading in and viewing the prokaryotic and viral hits that pass the threshold, echo = F}
+##prokaryotic and viral contaminants with bit scores >1000, blast in outfmt 6
+##also inner join with lengths so we have all that info in one place
+read.table(file = "/Users/benjamin.d.young/Dropbox/NOAA_postdoc/projects/ofav_genome_master/contaminant_screening/contaminant_hits_pv_passfilter_rr.txt", 
+           header = F) %>% 
+  dplyr::rename("read_ID" = 1, 
+         "subject_ID" = 2, 
+         "percent_identity" = 3, 
+         "align_length" = 4, 
+         "mismatches" = 5, 
+         "gap_open" = 6, 
+         "query_start" = 7, 
+         "query_end" = 8, 
+         "subject_start" = 9, 
+         "subject_end" = 10, 
+         "e_value" = 11, 
+         "bit_Score" = 12) %>% 
+  inner_join(hifi_read_length, 
+             by = c("read_ID" = "hifi_read_name")) -> pv_hits
+# View(pv_hits)
+
+## making the percentage of each hits align length to the contigs
+##so obviously if there is a blast result with 100% it means that whole contig is probably a contaminant
+pv_hits %>% 
+  mutate(percent_alignment = (align_length/length)*100) -> pv_hits
+
+pv_hits %>%
+  group_by(read_ID) %>% 
+  summarise(count = n()) -> pv_hit_for_removal
+# View(pv_hit_for_removal)
+```
+
+```{r histogram of percent alignment for the blast results to the contigs, echo = F}
+ggplot(data = pv_hits, 
+       aes(x = percent_alignment)) +
+  geom_histogram(binwidth = 10) + 
+  labs(x = "Raw Read Length", y = "Count", title = "Histogram of Raw HiFi Read Lengths") + 
+  scale_fill_manual(values = c("blue")) + 
+  scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
+```
+
+So this is showing me that the majority of the percentage alignments are actually pretty low and we do not have that many 100% sequences. Remember this is for each blast hit though and is not taking into account coverage over the whole raw read. 
+
+```{r histogram showing the alignment of all blast hits along the raw read, echo = F}
+ggplot(data = pv_hits %>% 
+  group_by(read_ID) %>% 
+   mutate(start = min(query_start), 
+          stop = max(query_end), 
+          align_length = stop - start, 
+          length = unique(length), 
+          percent_alignment = (align_length/length)*100), 
+       aes(x = percent_alignment)) +
+  geom_histogram(binwidth = 10) + 
+  labs(x = "Raw Read Length", y = "Count", title = "Histogram of Percentage Alignment over the whole raw read") + 
+  scale_fill_manual(values = c("blue")) + 
+  scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
+```
+
+This is showing that when we group by the raw read that we are getting pretty high coverage over the raw reads. 
+
+```{r looking at pv contaminants with less than 40% covered, include = F}
+pv_hits %>% 
+  group_by(read_ID) %>% 
+   summarise(start = min(query_start), 
+          stop = max(query_end), 
+          align_length = stop - start, 
+          length = unique(length), 
+          percent_alignment = (align_length/length)*100) %>%
+  arrange(desc(length), percent_alignment) -> summarised_alignments_raw_reads
+#  dplyr::filter(percent_alignment < 50) 
+# View(summarised_alignments_raw_reads)
+```
+
+```{r i cannot remember what this chunk is doing lolllllll, include = F}
+# summarised_alignments_raw_reads %>% 
+#   dplyr::filter(percent_alignment > 50 & percent_alignment < 70 & length > 20000) %>% View()
+# 
+# summarised_alignments_raw_reads %>% 
+#   dplyr::filter(percent_alignment < 20) %>% nrow()
+```
+
+```{r ggplot for looking at contaminant on a contig, figure.width = 40, figure.height = 10}
+ggplot(pv_hits %>% 
+         dplyr::filter(read_ID %in% "m64202e_221113_151152/14419005/ccs") %>% 
+         mutate(subject_ID = as.factor(subject_ID))) + 
+  geom_rect(aes(xmin=query_start, 
+                xmax=query_end, 
+                ymin=as.numeric(subject_ID)-0.4, 
+                ymax=as.numeric(subject_ID)+0.4), 
+            fill="gray60") + 
+  geom_segment(aes(x=query_start, 
+                   y=subject_ID, 
+                   xend=query_end, 
+                   yend=subject_ID), size=2, color="blue") +
+  scale_y_discrete(expand = c(0.2, 0.2), 
+                   guide = guide_axis(n.dodge = 3)) +
+  scale_x_continuous(limits = c(0, 33399), 
+                     expand = c(0, 0), 
+                     labels = scales::number_format()) + 
+  theme_bw() +
+  theme(text = element_text(size = 5))
+```
+
+Using these results, I will be removing the contaminants (as detailed below) and then pass the contaminant cleaned raw reads into hifiasm for the preliminary assembly. 
+
+mito_hit_for_removal -> mitochondrial hits with bit score >1000
+summarised_alignments_raw_reads -> bit scores >1000 for viral and prokaryotic
+euk_hit_for_removal -> the one euk hit from the blasts
+
+```{r looking at the lengths of everything}
+nrow(hifi_read_length)
+nrow(mito_hit_for_removal)
+nrow(summarised_alignments_raw_reads)
+nrow(euk_hit_for_removal)
+```
+
+```{r sum of contams and proportion of contams to the total raw reads, echo = F}
+(nrow(mito_hit_for_removal) + nrow(summarised_alignments_raw_reads) + nrow(euk_hit_for_removal))
+((nrow(mito_hit_for_removal) + nrow(summarised_alignments_raw_reads) + nrow(euk_hit_for_removal))/nrow(hifi_read_length)) * 100
+```
+
+Sum of all contams = 54,828
+This is only 2% of the raw hifi reads, so that is pretty dope to be honest. 
+
+```{r for option 1 above}
+summarised_alignments_raw_reads %>% 
+  dplyr::select(read_ID) %>% 
+  rbind(mito_hit_for_removal %>% 
+          dplyr::select(read_ID)) %>% 
+  rbind(euk_hit_for_removal %>% 
+          dplyr::select(read_ID)) -> all_contam_removal
+
+hifi_read_length %>% 
+  dplyr::filter(!hifi_read_name %in% all_contam_removal$read_ID) -> all_contam_rem_good_hifi_read_list
+
+nrow(all_contam_rem_good_hifi_read_list)
+nrow(hifi_read_length) - (nrow(mito_hit_for_removal) + nrow(summarised_alignments_raw_reads) + nrow(euk_hit_for_removal))
+```
+
+```{r mean and sum of contam removed raw reads for manuscript}
+mean(all_contam_rem_good_hifi_read_list$length)
+sum(all_contam_rem_good_hifi_read_list$length)
+```
+
+The one discrepancy is that the euk_contam is also present in the prokvir. 
+
+```{r writing files as lists for use in seqtk}
+# write.table(all_contam_rem_good_hifi_read_list, 
+#             file = "~/Desktop/ofav_genome_master/raw_reads_contam_removal/lists_4_seqtk/all_contam_rem_good_hifi_read_list.txt", 
+#             row.names = F, 
+#             col.names = F,
+#             quote = F)
+```
+
+```{r workin g out rough sequencing depth for the genome, echo = F}
+hifi_read_length %>% 
+  dplyr::filter(hifi_read_name %in% all_contam_rem_good_hifi_read_list$hifi_read_name) -> filt_raw_Reads
+(sum(filt_raw_Reads$length)/500000000)*((498620969/sum(filt_raw_Reads$length))*100)
+```
+
+This is indicating that we have roughly *100x* coverage using one PacBio flow cell. That pretty dope. 
+
+```{bash seqtk commands to subset raw read fasta file and remove the contaminants, include = F}
+cd /scratch/projects/omics/ofav_genome/hifi_assemblay
+
+## all contam
+seqtk subseq /scratch/projects/omics/ofav_genome/raw_reads/m64202e_221113_151152.hifi_reads.fasta \
+all_contam_rem_good_hifi_read_list.txt > all_contam_rem/hifi_rr_allcontam_rem.fasta
+
+##filt contam
+seqtk subseq /scratch/projects/omics/ofav_genome/raw_reads/m64202e_221113_151152.hifi_reads.fasta \
+pvls20_contam_rem_good_hifi_read_list.txt > filt_contam_rem/hifi_rr_filtcontam_rem.fasta
+```
+
+
+### 2.B - Meryl and GenomeScope2 Analysis of cleaned HiFi reads
+First calculating the best value for k to use in meryl. 
+
+```{bash identyfying best kmer for 500mb genome size}
+$MERQURY/best_k.sh 500000000
+```
+
+genome: 50000000
+tolerable collision rate: 0.001
+17.7699
+
+Generating the k-mer database using `k=18` and the contaminant removed raw reads. 
+
+```{bash meryl db creation}
+#BSUB -P coral_omics
+#BSUB -q general
+#BSUB -W 48:00
+#BSUB -J meryl_db
+#BSUB -n 4
+#BSUB -e /scratch/projects/omics/ofav_genome/meryl_merc/meryl_db.err
+#BSUB -o /scratch/projects/omics/ofav_genome/meryl_merc/meryl_db.out
+
+meryl k=18 \
+count ../hifi_assemblay/all_contam_rem/hifi_rr_allcontam_rem.fasta \
+output ../meryl_merc
+```
+
+```{bash making meryl histogram from the db}
+mamba activate merqury_env
+meryl histogram meryl_db > meryl_histo.txt
+```
+
+```{bash usaing meryl db for input to genomescope2 analysis}
+genomescope2 -i /scratch/projects/omics/ofav_genome/meryl_merc/meryl_histo.txt \
+-o /scratch/projects/omics/ofav_genome/meryl_merc/genomescope2 \
+-k 18 \
+--testing
+```
+
+```{bash Generating the bounds file for purge dupes pipeline}
+#while IFS=$'\t' read -r -a myArray; do avg_cov="${myArray[2]}"; done < SIMULATED_testing.tsv
+#lower_bound=$(python -c "print (round($avg_cov*1.5))")
+#upper_bound=$((lower_bound * 3))
+#arr=()
+#hile IFS= read -r line; do arr+=("$line"); done < summary.txt
+#enomesize=$(echo "${arr[10]}"  | awk '{print  $6}' | sed 's,\,,,g')
+#printf "$lower_bound\t$upper_bound\t$genomesize\n" > bounds.tsv 
+```
+
+
+### 2.C - HiFiasm assembly with default parameters and QC
+
+An initial run of `HiFiasm` with default settings was run to assess how well haplotypes were purged. 
+
+```{bash Assembley using HIFIasm for all contam removed from raw reads}
+#! /usr/bin/env bash
+#BSUB -P coral_omics
+#BSUB -J hifiasm_all_contam_rem
+#BSUB -e /scratch/projects/omics/ofav_genome/error_and_outputs/hifiasm_all_contam_rem.err
+#BSUB -o /scratch/projects/omics/ofav_genome/error_and_outputs/hifiasm_all_contam_rem.out
+#BSUB -W 120:00
+#BSUB -n 12
+#BSUB -R "rusage[mem=18000]"
+#BSUB -q bigmem
+
+cd /scratch/projects/omics/ofav_genome/hifi_assemblay/all_contam_rem
+hifiasm -o Ofav_hifiasm_allcontam_rem.asm \
+-t 12 \
+hifi_rr_allcontam_rem.fasta \
+2> Ofav_hifiasm_allcontam_rem.asm.log
+```
+
+```{bash converting from gfa to fastas for downstream use}
+#!/bin/bash
+#BSUB -P omics
+#BUSB -J convert_gfa_contrem_allfilt_contrem
+#BSUB -e /scratch/projects/omics/ofav_genome/error_and_outputs/convert_gfa_contrem_allfilt_contrem.err
+#BUSB -o /scratch/projects/omics/ofav_genome/error_and_outputs/convert_gfa_contrem_allfilt_contrem.out
+#BUSB -q general
+#BSUB -n 10
+
+cd /scratch/projects/omics/ofav_genome/hifi_assemblay/all_contam_rem
+awk '/^S/{print ">"$2;print $3}' Ofav_hifiasm_allcontam_rem.asm.bp.p_ctg.gfa > Ofav_hifiasm_allcontrem.fa
+awk '/^S/{print ">"$2;print $3}' Ofav_hifiasm_allcontam_rem.asm.bp.hap1.p_ctg.gfa > Ofav_hifiasm_allcontrem_hap1.fa
+awk '/^S/{print ">"$2;print $3}' Ofav_hifiasm_allcontam_rem.asm.bp.hap2.p_ctg.gfa > Ofav_hifiasm_allcontrem_hap2.fa
+```
+
+```{bash default HiFiasm merqury run of primary assembly}
+#BSUB -P coral_omics
+#BSUB -q general
+#BSUB -W 48:00
+#BSUB -J merqury_prmasm
+#BSUB -n 4
+#BSUB -e /scratch/projects/omics/ofav_genome/meryl_merc/prm_asm/merqury_prmasm.err
+#BSUB -o /scratch/projects/omics/ofav_genome/meryl_merc/prm_asm/merqury_prmasm.out
+
+cd /scratch/projects/omics/ofav_genome/meryl_merc/prm_asm
+merqury.sh ../meryl_db \
+../../hifi_assemblay/all_contam_rem/Ofav_hifiasm_allcontrem.fa \
+../prm_asm
+```
+
+```{bash default HiFiasm merqury haplotype run}
+#BSUB -P coral_omics
+#BSUB -q general
+#BSUB -W 48:00
+#BSUB -J merqury_hap
+#BSUB -n 4
+#BSUB -e /scratch/projects/omics/ofav_genome/meryl_merc/haplotypes/merqury_hap.err
+#BSUB -o /scratch/projects/omics/ofav_genome/meryl_merc/haplotypes/merqury_hap.out
+
+cd /scratch/projects/omics/ofav_genome/meryl_merc/haplotypes
+merqury.sh ../meryl_db \
+../../hifi_assemblay/all_contam_rem/Ofav_hifiasm_allcontrem_hap1.fa \
+../../hifi_assemblay/all_contam_rem/Ofav_hifiasm_allcontrem_hap2.fa \
+out
+```
+
+```{bash busco analysis of primary assembly with default parameters}
+#!/bin/bash
+#BSUB -J busco_all_cont_rem_asm
+#BSUB -q general
+#BSUB -W 120:00
+#BSUB -P omics
+#BSUB -o /scratch/projects/omics/ofav_genome/error_and_outputs/busco_all_cont_rem_asm.out
+#BSUB -e /scratch/projects/omics/ofav_genome/error_and_outputs/busco_all_cont_rem_asm.err
+#BSUB -n 15
+
+mkdir /scratch/projects/omics/ofav_genome/busco_results/all_cont_rem
+cd /scratch/projects/omics/ofav_genome/busco_results/all_cont_rem
+
+busco -m genome \
+-l metazoa_odb10 \
+-i /scratch/projects/omics/ofav_genome/hifi_assemblay/all_contam_rem/Ofav_hifiasm_allcontrem.fa  \
+-o BUSCO_hifiasm_allcontrem_asm \
+--update-data
+```
+
+C:94.9%[S:92.5%,D:2.4%],F:2.3%,M:2.8%,n:954        
+905     Complete BUSCOs (C)                        
+882     Complete and single-copy BUSCOs (S)        
+23      Complete and duplicated BUSCOs (D)         
+22      Fragmented BUSCOs (F)                      
+27      Missing BUSCOs (M)                         
+954     Total BUSCO groups searched 
+
+```{bash quast of the primary and haplotypes with default hifiasm parameters}
+quast -t 10 --eukaryote \
+all_contam_rem/Ofav_hifiasm_allcontrem.fa \
+all_contam_rem/Ofav_hifiasm_allcontrem_hap1.fa \
+all_contam_rem/Ofav_hifiasm_allcontrem_hap2.fa \
+old_ofav_genome/GCF_002042975.1_ofav_dov_v1_genomic.fna \
+-o /scratch/projects/omics/ofav_genome/quast_results/all_filt_contam_removed_asms
+```
+
+
+### 2.D - HiFiasm assembly (Primary and alternative) and QC
+
+Running `HiFiasm` using the `--primary` flag as we have no real way of knowing if the haplotypes produced are real or not. I also tested a number of `-s` flags (0.55, 0.50, 0.45, 0.40, 0.35, 0.30) and they all worked well to resolve the haplotypes with the heterozygosity. As such I stuck with the 0.55 option for the remainder of the pipeline. N.B., the `--purge-max` flag was set to 150, this value was identified from `genomescope2` and `merqury` in *2.B*. 
+
+```{bash hifiasm prm and alt with s as 0.55}
+cd /scratch/projects/omics/ofav_genome/purge_dups_pipeline/s55_pa
+hifiasm -o ofav_hifi_s55_pa \
+--primary \
+-s 0.55 \
+-t 10 \
+--purge-max 150 \
+../../hifi_assemblay/all_contam_rem/hifi_rr_allcontam_rem.fasta \
+2> ofav_hifi_prm.asm.log
+
+awk '/^S/{print ">"$2;print $3}' ofav_hifi_s55_pa.p_ctg.gfa > ofav_s55_prm.fa
+awk '/^S/{print ">"$2;print $3}' ofav_hifi_s55_pa.a_ctg.gfa > ofav_s55_alt.fa
+wc -l ofav_s55_prm.fa ofav_s55_alt.fa
+```
+
+```{bash s55 prm alt merqury}
+#BSUB -P coral_omics
+#BSUB -q general
+#BSUB -W 48:00
+#BSUB -J pa_mer_s55
+#BSUB -n 4
+#BSUB -e /scratch/projects/omics/ofav_genome/purge_dups_pipeline/s55_pa/merq_res/s55_hap.err
+#BSUB -o /scratch/projects/omics/ofav_genome/purge_dups_pipeline/s55_pa/merq_res/s55_hap.out
+
+cd /scratch/projects/omics/ofav_genome/purge_dups_pipeline/s55_pa/merq_res
+merqury.sh /scratch/projects/omics/ofav_genome/purge_dups_pipeline/mercury_hifiasm/m_db \
+/scratch/projects/omics/ofav_genome/purge_dups_pipeline/s55_pa/ofav_s55_prm.fa \
+/scratch/projects/omics/ofav_genome/purge_dups_pipeline/s55_pa/ofav_s55_alt.fa \
+s55_pr_al
+```
+
+```{bash s55 prm alt busco}
+#BSUB -P coral_omics
+#BSUB -q general
+#BSUB -W 48:00
+#BSUB -J s55_bu_prm
+#BSUB -n 4
+#BSUB -e /scratch/projects/omics/ofav_genome/purge_dups_pipeline/s55_pa/busco/prm/s55.err
+#BSUB -o /scratch/projects/omics/ofav_genome/purge_dups_pipeline/s55_pa/busco/prm/s55.out
+
+cd /scratch/projects/omics/ofav_genome/purge_dups_pipeline/s55_pa/busco/prm
+
+busco -m genome \
+-l metazoa_odb10 \
+-i /scratch/projects/omics/ofav_genome/purge_dups_pipeline/s55_pa/ofav_s55_prm.fa  \
+-o res \
+--update-data \
+-f
+
+#BSUB -P coral_omics
+#BSUB -q general
+#BSUB -W 48:00
+#BSUB -J s55_bu_alt
+#BSUB -n 4
+#BSUB -e /scratch/projects/omics/ofav_genome/purge_dups_pipeline/s55_pa/busco/alt/s55.err
+#BSUB -o /scratch/projects/omics/ofav_genome/purge_dups_pipeline/s55_pa/busco/alt/s55.out
+
+cd /scratch/projects/omics/ofav_genome/purge_dups_pipeline/s55_pa/busco/alt
+
+busco -m genome \
+-l metazoa_odb10 \
+-i /scratch/projects/omics/ofav_genome/purge_dups_pipeline/s55_pa/ofav_s55_alt.fa  \
+-o res \
+--update-data \
+-f
+```
+
+```{bash quast of s55 and other things}
+cd /scratch/projects/omics/ofav_genome/purge_dups_pipeline/quast_hifi_pa
+quast -t 5 \
+--eukaryote \
+/scratch/projects/omics/ofav_genome/purge_dups_pipeline/s55_pa/ofav_s55_prm.fa \
+/scratch/projects/omics/ofav_genome/purge_dups_pipeline/s55_pa/ofav_s55_alt.fa \
+/scratch/projects/omics/ofav_genome/old_ofav_genome/GCF_002042975.1_ofav_dov_v1_genomic.fna \
+/scratch/projects/omics/ofav_genome/busco_results/other_coral/pcom_busco/Porites_compressa_HIv1.assembly.fasta \
+/scratch/projects/omics/ofav_genome/busco_results/other_coral/mcap_busco/Montipora_capitata_HIv3.assembly.fasta \
+/scratch/projects/omics/ofav_genome/busco_results/other_coral/pacu_busco/Pocillopora_acuta_HIv2.assembly.fasta \
+/scratch/projects/omics/ofav_genome/busco_results/other_coral/pmea_busco/Pocillopora_meandrina_HIv1.assembly.fasta \
+-o /scratch/projects/omics/ofav_genome/purge_dups_pipeline/quast_hifi_pa
+```
+
+
+### 2.E - Scaffolding (ragtag, ntlink 5 rounds)
+
+For scaffolding I used 3 methods to compare. 
+- Ragtag with the old *Orbicella faveolata* genome
+- NTlink with 5 rounds and the cleaned hifi reads 
+- Longstitch (ntlink 5 rounds + ARKs) with the cleaned raw hifi reads. 
+
+```{bash ragtag with the old ofav genome}
+#!/bin/bash
+#BSUB -P coral_omics
+#BSUB -q bigmem
+#BSUB -W 120:00
+#BSUB -R "rusage[mem=7500]"
+#BSUB -J ragtag_scaffold_s55
+#BSUB -n 8
+#BSUB -e /scratch/projects/omics/ofav_genome/ragtag_scaf/purged_ragtag.err
+#BSUB -o /scratch/projects/omics/ofav_genome/ragtag_scaf/purged_ragtag.out
+
+# scaffold a query assembly
+ragtag.py scaffold \
+/scratch/projects/omics/ofav_genome/old_ofav_genome/GCF_002042975.1_ofav_dov_v1_genomic.fna \
+/scratch/projects/omics/ofav_genome/s55_pa/ofav_s55_prm.fa \
+-o /scratch/projects/omics/ofav_genome/ragtag_scaf \
+-t 8
+```
+
+```{bash ntlink with 5 rounds and cleaned hifi reads}
+#!/bin/bash
+#BSUB -P omics
+#BSUB -J ntlink_scaf_s55
+#BSUB -e /scratch/projects/omics/ofav_genome/ntlink_5r_s55/ntlink_scaf_s55.err
+#BSUB -o /scratch/projects/omics/ofav_genome/ntlink_5r_s55/ntlink_scaf_s55.out
+#BSUB -W 48:00
+#BSUB -n 5
+#BSUB -q bigmem
+#BSUB -R "rusage[mem=10000]"
+
+cp /scratch/projects/omics/ofav_genome/raw_reads/hifi_rr_allcontam_rem.fasta /scratch/projects/omics/ofav_genome/ntlink_5r_s55
+cp /scratch/projects/omics/ofav_genome/s55_pa/ofav_s55_prm.fa /scratch/projects/omics/ofav_genome/ntlink_5r_s55
+cd /scratch/projects/omics/ofav_genome/ntlink_5r_s55
+ntLink_rounds run_rounds \
+t=8 \
+g=100 \
+rounds=5 \
+gap_fill \
+target=ofav_s55_prm.fa \
+reads=hifi_rr_allcontam_rem.fasta \
+out_prefix=ofav_ntlink_s55
+```
+
+Then ran the busco and quast checks to look at the results of the scaffolding. 
+
+```{bash quast of scaffolding and other things}
+quast -t 5 \
+--eukaryote \
+/scratch/projects/omics/ofav_genome/s55_pa/ofav_s55_prm.fa \
+/scratch/projects/omics/ofav_genome/s55_pa/ofav_s55_alt.fa \
+/scratch/projects/omics/ofav_genome/ntlink_5r_s55/ofav_s55_prm.fa.k32.w100.z1000.ntLink.5rounds.fa \
+/scratch/projects/omics/ofav_genome/ragtag_scaf/ragtag.scaffold.fasta \
+/scratch/projects/omics/ofav_genome/old_ofav_genome/GCF_002042975.1_ofav_dov_v1_genomic.fna \
+/scratch/projects/omics/ofav_genome/busco_results/other_coral/pcom_busco/Porites_compressa_HIv1.assembly.fasta \
+/scratch/projects/omics/ofav_genome/busco_results/other_coral/mcap_busco/Montipora_capitata_HIv3.assembly.fasta \
+/scratch/projects/omics/ofav_genome/busco_results/other_coral/pacu_busco/Pocillopora_acuta_HIv2.assembly.fasta \
+/scratch/projects/omics/ofav_genome/busco_results/other_coral/pmea_busco/Pocillopora_meandrina_HIv1.assembly.fasta \
+-o /scratch/projects/omics/ofav_genome/quast_scaf
+```
+
+```{bash busco of ragtag and ntlink}
+#BSUB -P coral_omics
+#BSUB -q general
+#BSUB -W 48:00
+#BSUB -J nt5_s55
+#BSUB -n 4
+#BSUB -e /scratch/projects/omics/ofav_genome/ntlink_5r_s55/busco/s55.err
+#BSUB -o /scratch/projects/omics/ofav_genome/ntlink_5r_s55/busco/s55.out
+
+cd /scratch/projects/omics/ofav_genome/ntlink_5r_s55/busco
+busco -m genome \
+-l metazoa_odb10 \
+-i /scratch/projects/omics/ofav_genome/ntlink_5r_s55/ofav_s55_prm.fa.k32.w100.z1000.ntLink.5rounds.fa \
+-o res \
+--update-data \
+-f
+
+#BSUB -P coral_omics
+#BSUB -q general
+#BSUB -W 48:00
+#BSUB -J rt_s55
+#BSUB -n 4
+#BSUB -e /scratch/projects/omics/ofav_genome/ragtag_scaf/busco/s55.err
+#BSUB -o /scratch/projects/omics/ofav_genome/ragtag_scaf/busco/s55.out
+
+cd /scratch/projects/omics/ofav_genome/ragtag_scaf/busco
+
+busco -m genome \
+-l metazoa_odb10 \
+-i /scratch/projects/omics/ofav_genome/ragtag_scaf/ragtag.scaffold.fasta  \
+-o res \
+--update-data \
+-f
+```
+
+
+### 2.F - Telomere analysis 
+
+Using the program `tidk` for this. Ran the following fastas with the *TTAGGG* telomeric repeat as identified from the literature. 
+- S55 Prm assembly
+- NTlink 5 round scaffold
+
+```{bash running tidk using the cnidarian telomeric repeat}
+tidk search \
+--string TTAGGG \
+--output prm_s55 \
+--dir prm \
+--extension tsv \
+/scratch/projects/omics/ofav_genome/s55_pa/ofav_s55_prm.fa
+
+tidk search \
+--string TTAGGG \
+--output nt5 \
+--dir ntlink5 \
+--extension tsv \
+/scratch/projects/omics/ofav_genome/funannotate_clean/ofav_ntlink_clean_sort.fa
+```
+
+```{r reading in tsv for the tidk analysis}
+read.csv(file = "/Users/benjamin.d.young/Dropbox/NOAA_postdoc/projects/ofav_genome_master/tidk_analysis/prm/prm_s55_telomeric_repeat_windows.tsv",
+         sep = "\t") %>%
+  pivot_longer(
+    cols = c(forward_repeat_number, reverse_repeat_number),
+    names_to = "orientation",
+    values_to = "count"
+  ) -> prm_telo
+
+read.csv(file = "/Users/benjamin.d.young/Dropbox/NOAA_postdoc/projects/ofav_genome_master/tidk_analysis/ntlink5/nt5_telomeric_repeat_windows.tsv",
+         sep = "\t") %>%
+  pivot_longer(
+    cols = c(forward_repeat_number, reverse_repeat_number),
+    names_to = "orientation",
+    values_to = "count"
+  ) -> nt5_telo
+```
+
+```{r getting only contigs with good counts}
+prm_telo %>%
+  group_by(id) %>%
+  summarise(max = max(count)) %>%
+  dplyr::filter(max > 50) -> prm_count
+
+nt5_telo %>%
+  group_by(id) %>%
+  summarise(max = max(count)) %>%
+  dplyr::filter(max > 50) -> nt5_count
+```
+
+```{r prmasm teolmere analysis, echo = F, fig.width = 10, fig.height=8}
+ggplot(
+  data = prm_count %>%
+    inner_join(prm_telo) %>%
+    mutate(id = fct_reorder(.desc = T, id, max)),
+  aes(x = window, y = count, color = orientation)
+) +
+  geom_line() +
+  facet_wrap( ~ id,
+              scale = "free")
+
+ggplot(
+  data = nt5_count %>%
+    inner_join(nt5_telo) %>%
+    mutate(id = fct_reorder(.desc = T, id, max)),
+  aes(x = window, y = count, color = orientation)
+) +
+  geom_line() +
+  facet_wrap( ~ id,
+              scale = "free")
+```
+
+From this analysis, I am going to progress with the `NTlink + 5 rounds` for repeat modeling and repeat masking. Yay.
+
+Also decided to run a busco analysis on the 19 scaffolded contigs with telomeres to see the score. 
+
+```{r writing list of telomeric contigs for busco analysis}
+nt5_count %>% 
+  dplyr::filter(max > 200) %>%
+  dplyr::select(1) %>% 
+  write.table(., 
+              file = "/Users/benjamin.d.young/Dropbox/NOAA_postdoc/projects/ofav_genome_master/tidk_analysis/ntlink_telomere_contigs.txt", 
+              col.names = F, 
+              row.names = F, 
+              quote = F)
+```
+
+```{bash first getting only the contigs we want}
+cd /scratch/projects/omics/ofav_genome/funannotate_clean
+seqtk subseq \
+ofav_ntlink_clean_sort.fa \
+ntlink_telo_contigs.txt > ofav_telomere_contigs.fa
+```
+
+```{bash now running busco on telomeric contigs}
+#BSUB -P coral_omics
+#BSUB -q bigmem
+#BSUB -W 48:00
+#BSUB -J telomere_busco
+#BSUB -n 6
+#BSUB -e /scratch/projects/omics/ofav_genome/busco_results/telomere_contigs/telomere_busco.err
+#BSUB -o /scratch/projects/omics/ofav_genome/busco_results/telomere_contigs/telomere_busco.out
+
+cd /scratch/projects/omics/ofav_genome/busco_results/telomere_contigs
+
+busco -m genome \
+-l metazoa_odb10 \
+-i /scratch/projects/omics/ofav_genome/funannotate_clean/ofav_telomere_contigs.fa  \
+-o res \
+--update-data \
+-f \
+-c 6
+```
+
+
+### 2.G - Cleaning, fixing names, sorting. 
+
+```{bash making better names for the contigs}
+#BSUB -P coral_omics
+#BSUB -q general
+#BSUB -W 48:00
+#BSUB -J clean_sort
+#BSUB -n 5
+#BSUB -e scratch/projects/omics/ofav_genome/funannotate_clean/clean_Sort.err
+#BSUB -o scratch/projects/omics/ofav_genome/funannotate_clean/clean_Sort.out
+
+cd /scratch/projects/omics/ofav_genome/funannotate_clean
+
+funannotate sort \
+-i /scratch/projects/omics/ofav_genome/funannotate_clean/ofav_ntlink5_clean.fa \
+-o /scratch/projects/omics/ofav_genome/funannotate_clean/ofav_ntlink_clean_sort.fa \
+-b ofavscaf
+```
+
+
+### 2.G - Repeat Modeler
+
+```{bash making the repeat modeler database using ntlink with 5 rounds}
+#BSUB -P coral_omics
+#BSUB -q general
+#BSUB -W 48:00
+#BSUB -J rm_db
+#BSUB -n 4
+#BSUB -e /scratch/projects/omics/ofav_genome/repeatmodeler/rm_db.err
+#BSUB -o /scratch/projects/omics/ofav_genome/repeatmodeler/rm_db.out
+
+#mamba activate repeatmodeler_env
+cd /scratch/projects/omics/ofav_genome/repeatmodeler
+
+BuildDatabase -name Ofav \
+/scratch/projects/omics/ofav_genome/ntlink_5r_s55/ofav_s55_prm.fa.k32.w100.z1000.ntLink.5rounds.fa
+```
+
+```{bash running repeatmodeler}
+#BSUB -P coral_omics
+#BSUB -q bigmem
+#BSUB -W 48:00
+#BSUB -J rm_run
+#BSUB -n 15
+#BSUB -R "rusage[mem=15000]"
+#BSUB -e /scratch/projects/omics/ofav_genome/repeatmodeler/rm_run.err
+#BSUB -o /scratch/projects/omics/ofav_genome/repeatmodeler/rm_run.out
+
+#mamba activate repeatmodeler_env
+cd /scratch/projects/omics/ofav_genome/repeatmodeler
+
+RepeatModeler -database Ofav \
+-threads 20 -LTRStruct >& run.out &
+```
+
+So it seems the sym link is the problem here for the LTR structural analysis. 
+
+Going into the temporary directory, the symlink is broken. 
+
+```{bash fixing broken symlink}
+rm -r seq.fa
+ln -s /scratch/projects/omics/ofav_genome/ntlink_5r_s55/ofav_s55_prm.fa.k32.w100.z1000.ntLink.5rounds.fa seq.fa
+```
+
+```{bash running the LTR struc analysis}
+#BSUB -P coral_omics
+#BSUB -q bigmem
+#BSUB -W 48:00
+#BSUB -J rm_run
+#BSUB -n 15
+#BSUB -R "rusage[mem=15000]"
+#BSUB -e /scratch/projects/omics/ofav_genome/repeatmodeler/ltr_ret.err
+#BSUB -o /scratch/projects/omics/ofav_genome/repeatmodeler/ltr_ret.out
+
+cd /scratch/projects/omics/ofav_genome/repeatmodeler/RM_317.WedJun140937302023/LTR_31461.ThuJun152153012023/LRET_31461.ThuJun152305422023
+LTR_retriever -repeatmasker /nethome/bdy8/mambaforge/envs/repeatmodeler_env/share/RepeatMasker -blastplus /nethome/bdy8/mambaforge/envs/repeatmodeler_env/bin -cdhit_path /nethome/bdy8/mambaforge/envs/repeatmodeler_env/bin -trf_path /nethome/bdy8/mambaforge/envs/repeatmodeler_env/bin/trf -genome seq.fa -inharvest /scratch/projects/omics/ofav_genome/repeatmodeler/RM_317.WedJun140937302023/LTR_31461.ThuJun152153012023/raw-struct-results.txt -noanno -threads 15
+```
+
+Did not get any results for the `LTRstruc` so have not included. 
+
+
+### 2.H - RepeatMasker
+
+Some useful links 
+https://www.clementgoubert.com/post/a-simple-pipeline-for-te-annotation-in-an-assembled-genome
+https://darencard.net/blog/2022-07-09-genome-repeat-annotation/
+https://www.repeatmasker.org/webrepeatmaskerhelp.html
+
+Will be running twice to make a hard and soft masked version of the genome. 
+
+```{bash running repeatmasker}
+#BSUB -P coral_omics
+#BSUB -q bigmem
+#BSUB -W 48:00
+#BSUB -J repeatmasker_hard
+#BSUB -n 12
+#BSUB -R "rusage[mem=15000]"
+#BSUB -e /scratch/projects/omics/ofav_genome/repeatmasker_hard/rm_run.err
+#BSUB -o /scratch/projects/omics/ofav_genome/repeatmasker_hard/rm_run.out
+
+cd /scratch/projects/omics/ofav_genome/repeatmasker_hard
+RepeatMasker -pa 4 \
+-a \
+-gff \
+-no_is \
+-lib /scratch/projects/omics/ofav_genome/repeatmodeler/Ofav-families.fa \
+-dir /scratch/projects/omics/ofav_genome/repeatmasker_hard \
+/scratch/projects/omics/ofav_genome/funannotate_clean/ofav_ntlink_clean_sort.fa &> RM.run.out &
+```
+
+```{bash running repeatmasker soft}
+#BSUB -P coral_omics
+#BSUB -q bigmem
+#BSUB -W 48:00
+#BSUB -J repeatmasker_soft
+#BSUB -n 12
+#BSUB -R "rusage[mem=15000]"
+#BSUB -e /scratch/projects/omics/ofav_genome/repeatmasker_soft/rm_run.err
+#BSUB -o /scratch/projects/omics/ofav_genome/repeatmasker_soft/rm_run.out
+
+cd /scratch/projects/omics/ofav_genome/repeatmasker_soft
+RepeatMasker -pa 4 \
+-a \
+-xsmall \
+-gff \
+-no_is \
+-lib /scratch/projects/omics/ofav_genome/repeatmodeler/Ofav-families.fa \
+-dir /scratch/projects/omics/ofav_genome/repeatmasker_soft \
+/scratch/projects/omics/ofav_genome/funannotate_clean/ofav_ntlink_clean_sort.fa &> RM.run.out &
+```
+
+*N.B.* the `-s` flag, even though in the documentation, was not working. But the `-xsmall` seems to also return the softmasked so yay. 
+
+
+## 3. IsoSeq Analysis 
+
+```{r}
+read.csv(file = "/Users/benjamin.d.young/Dropbox/NOAA_postdoc/projects/ofav_genome_master/isoseq/hq_transcripts.fl_counts.csv") -> hq_count
+```
+
+```{r}
+mean(hq_count$BioSample_1)
+median(hq_count$BioSample_1)
+```
+
+
+To start with I will be putting the hq_transcripts.fasta in to `pasa`. I am having some install problems 
+
+```{bash}
+mamba create -n pasa_env -c conda-forge -c bioconda pasa
+```
+
+This install properly, but it has not seemed to link the paths to the pasa programs which are in the `pasa_env/opt` folder. 
+setting environment variables - https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#:~:text=To%20set%20environment%20variables%2C%20run,conda%20env%20config%20vars%20list%20.
+
+```{bash}
+mamba activate pasa_env
+
+# seeing any vars set already (should be none)
+conda env config vars list
+
+#setting the PASAHOME var 
+conda env config vars set PASAHOME=/nethome/bdy8/mambaforge/envs/pasa_env/opt/pasa-2.5.2
+
+#have to then reactivate the shell
+mamba activate pasa_env
+
+##checks to see if it works
+#should print the path, it does
+echo $PASAHOME
+#should show the program parameters, it does
+$PASAHOME/Launch_PASA_pipeline.pl
+```
+
+Okay yay fixed I think, lets run the first step in the PASA documentation to see if this variable works. 
+I do not know how necessary this `seqclean` command is due to having the *hq_transcripts.fasta* from the `isoseq` pipeline, but lets have a look. 
+
+```{bash cleaning hq transcripts}
+#BSUB -P coral_omics
+#BSUB -q bigmem
+#BSUB -W 48:00
+#BSUB -J pasa_clean
+#BSUB -n 4
+#BSUB -e /scratch/projects/omics/ofav_genome/pasa/rm_run.err
+#BSUB -o /scratch/projects/omics/ofav_genome/pasa/rm_run.out
+
+cd /scratch/projects/omics/ofav_genome/pasa
+$PASAHOME/bin/seqclean \
+../iso_seq/hq_transcripts.fasta
+```
+
+It removes a few so I have inlcuded this step. 
+
+https://github.com/PASApipeline/PASApipeline/wiki/PASA_alignment_assembly 
+
+```{bash making the config file for PASA}
+cp ~/mambaforge/envs/pasa_env/opt/pasa/pasa-2.5.2/pasa_conf/pasa.alignAssembly.Template.txt \
+/scratch/projects/omics/ofav_genome/pasa
+mv pasa.alignAssembly.Template.txt alignAssembly.config
+```
+
+Nano `alignAssembly.config` and add the path variable to the sql database. I used this `/scratch/projects/omics/ofav_genome/pasa/ofav_db`
+
+Actions
+`-C` create a database
+`-R` run alignment/assembly pipeline
+
+Spliced Alignment Settings
+`--ALIGNERS` aligners in string, available are `gmap`, `blat`, `minimap2.` Can run several (comma seperated no space)
+
+Inputs
+`-g` genome sequence fasta
+`-t` transcript db
+
+PolyAdenylation site identification 
+`-T` flag for transcripts using the seqclean tool 
+`-u` transcript file with untrimmed database
+
+Super important to do this as well, make sure the `/` in the ISO-seq hq_transcript.fasta is changed to `_`. Also, if concatenating ISO-seq runs make sure everything has unique names. 
+https://github.com/PASApipeline/PASApipeline/issues/32
+
+```{bash commands to rename _ and see if stuff unique}
+## replacing / with _
+awk '{ gsub("/", "_"); print > "hq_transcripts_edited.fasta" }' hq_transcripts.fasta
+
+## making sure all >xxxx are unique
+sort | uniq -c | awk '$1!=1'
+```
+
+```{bash running seqclean and PASA pipeline on hq_transcripts}
+#BSUB -P coral_omics
+#BSUB -q bigmem
+#BSUB -W 100:00
+#BSUB -J pasa_main
+#BSUB -n 4
+#BSUB -R "rusage[mem=40000]"
+#BSUB -e /scratch/projects/omics/ofav_genome/pasa/pasa.err
+#BSUB -o /scratch/projects/omics/ofav_genome/pasa/pasa.out
+
+cd /scratch/projects/omics/ofav_genome/pasa
+
+$PASAHOME/bin/seqclean \
+hq_transcripts_edited.fasta \
+-c 4
+
+$PASAHOME/Launch_PASA_pipeline.pl \
+-c alignAssembly.config \
+-C \
+-R \
+-g ../funannotate_clean/ofav_ntlink_clean_sort.fa \
+-t hq_transcripts_edited.fasta.clean \
+-T \
+-u hq_transcripts_edited.fasta \
+--ALIGNERS blat,minimap2 \
+--TRANSDECODER \
+--ALT_SPLICE \
+--CPU 10
+```
+
+Notes:
+- Was having problems with the aligner `gmap` so I removed it. 
+https://github.com/PASApipeline/PASApipeline/issues/136
+- Make sure the `seqclean` outputs and raw are all in the same working directory or it struggle buses. 
+- Also make sure `CPU` is 1, this can mess up the `--ALT_SPLICE` analysis (https://github.com/PASApipeline/PASApipeline/issues/74). Note you can run the command, and then run it again with `--ALT_SPLICE` and `-C` (create databse) removed if you want to use more cores for the initial steps. 
+
+*Outputs*
+`ofav_db.validated_transcripts.gff3,.gtf,.bed` - the valid alignments
+`ofav_db.failed_gmap_alignments.gff3,.gtf,.bed` - the alignments that fail validation test
+`alignment.validations.output` - tab-delimited format describing the alignment validation results
+
+`ofav_db.assemblies.fasta` - the PASA assemblies in FASTA format.
+`ofav_db.pasa_assemblies.gff3,.gtf,.bed` - the PASA assembly structures.
+`ofav_db.pasa_alignment_assembly_building.ascii_illustrations.out` - descriptions of alignment assemblies and how they were constructed from the underlying transcript alignments.
+`ofav_db_pasa.pasa_assemblies_described.txt` - tab-delimited format describing the contents of the PASA assemblies, including the identity of those transcripts that were assembled into the corresponding structure.
+
+```{bash busco of pasa assemblies fasta}
+#BSUB -P coral_omics
+#BSUB -q general
+#BSUB -W 48:00
+#BSUB -J pasa_asm
+#BSUB -n 8
+#BSUB -e /scratch/projects/omics/ofav_genome/busco_results/pasa_assembly/pasa_asm.err
+#BSUB -o /scratch/projects/omics/ofav_genome/busco_results/pasa_assembly/pasa_asm.out
+
+cd /scratch/projects/omics/ofav_genome/busco_results/pasa_assembly
+
+busco -m transcriptome \
+-l metazoa_odb10 \
+-i /scratch/projects/omics/ofav_genome/pasa/ofav_db.sqlite.assemblies.fasta \
+-o res \
+--update-data \
+-f \
+-c 8
+```
+
+Now need to then run this to get the correct file for the `pasa_gff` in `Funannotate::predict`
+(https://github.com/nextgenusfs/funannotate/issues/902)
+(https://github.com/PASApipeline/PASApipeline/wiki/PASA_abinitio_training_sets)
+
+```{bash ab init gene rpedicitons step for funannotate}
+#BSUB -P coral_omics
+#BSUB -q bigmem
+#BSUB -W 48:00
+#BSUB -J abinit
+#BSUB -n 1
+#BSUB -R "rusage[mem=100000]"
+#BSUB -e /scratch/projects/omics/ofav_genome/pasa/abinit.err
+#BSUB -o /scratch/projects/omics/ofav_genome/pasa/abinit.out
+
+cd /scratch/projects/omics/ofav_genome/pasa
+
+$PASAHOME/scripts/pasa_asmbls_to_training_set.dbi \
+--pasa_transcripts_fasta ofav_db.sqlite.assemblies.fasta \
+--pasa_transcripts_gff3 ofav_db.sqlite.pasa_assemblies.gff3
+```
+
+https://github.com/TransDecoder/TransDecoder/wiki
+
+Output files 
+
+Coordinates of gene models based on the genome sequence.
+`fasta.transdecoder.genome.gff3` - *HAVE* gff3 file *THIS IS WHAT YOU WANT FOR FUNANNOTATE*
+`fasta.transdecoder.genome.bed` - *HAVE* bed file. 
+
+Coordinates of gene models based on the transcripts and not the genome
+`fasta.transdecoder.cds` - *HAVE*, cds fasta file
+`fasta.transdecoder.gff3` - *HAVE*, gff3 file
+`fasta.transdecoder.bed` - *HAVE*, bed file
+`fasta.transdecoder.pep` - *HAVE*, protein fasta file (CAN USE IN `funannotate::predict`)
+The accession corresponds to the PASA assembly. The type indicator can be any of the following: complete, 5prime_partial, 3prime_partial, or internal. The 5prime_partial are missing a start codon and translate to the very 5' end, 3prime_partial are missing a stop codon and translate to their very 3' end, and internal translate from the first to the last basepair in the sequence, missing a start and a stop codon. The 'complete' category are of greatest interest for the prospects of ab initio genefinder training. Typically, we would search these complete proteins against the non-redundant protein database at GenBank and identify those ORFs that have good database matches across most of their length. Such entries can be confidently used for training, in addition to those particularly long ORFs that do not match known proteins and are sufficiently complex in sequence.
+ 
+```{bash busco cds from transdecoder}
+#BSUB -P coral_omics
+#BSUB -q general
+#BSUB -W 48:00
+#BSUB -J transdecoder
+#BSUB -n 8
+#BSUB -e /scratch/projects/omics/ofav_genome/busco_results/transdecoder/transdecoder.err
+#BSUB -o /scratch/projects/omics/ofav_genome/busco_results/transdecoder/transdecoder.out
+
+cd /scratch/projects/omics/ofav_genome/busco_results/transdecoder
+
+busco -m transcriptome \
+-l metazoa_odb10 \
+-i /scratch/projects/omics/ofav_genome/pasa/ofav_db.sqlite.assemblies.fasta.transdecoder.cds \
+-o res \
+--update-data \
+-f \
+-c 8
+```
+
+
+## 4. Genome Annotation 
+
+Before doing this I have renamed files to make life a little easier. Base directory for all these is `/scratch/projects/omics/ofav_genome`. 
+
+ofav_s55_prm.fa.k32.w100.z1000.ntLink.5rounds.fa.masked -> ofav_scaffold_softmasked.fa (repeatmasker_soft directory)
+ofav_s55_prm.fa.k32.w100.z1000.ntLink.5rounds.fa.out.gff -> ofav_scaffold_softmasked.out.gff (repeatmasker_soft directory)
+ofav_s55_prm.fa.k32.w100.z1000.ntLink.5rounds.fa.masked -> ofav_scaffold_hardmasked.fa (repeatmasker_hard directory)
+ofav_s55_prm.fa.k32.w100.z1000.ntLink.5rounds.fa.out.gff -> ofav_scaffold_hardmasked.out.gff (repeatmasker_hard directory)
+ofav_s55_prm.fa.k32.w100.z1000.ntLink.5rounds.fa -> ofav_scaffold.fa (ntlink_5r_s55 directory)
+
+I also `cp` these to a final genome folder (ofav_final_files)
+
+Will be using `funannoate` for this. `Funannotate` takes in the genome and the transcriptome (from `pasa`) and runs a whole slew of things. It is super nice. https://funannotate.readthedocs.io/en/latest/index.html
+
+Overview of Processes is below. These will be my hased out headers below. 
+1. Clean –> 2. Sort –> 3. Mask –> 4. Train –> 5. Predict –> 6. Update –> 7. Annotate –> 8. Compare
+
+Followed the conda installation instructions in the docs. 
+
+```{bash makign funannotate environment}
+mamba create -n funannotate_env -c conda-forge -c bioconda "python>=3.6,<3.9" funannotate
+```
+
+It does give some output
+
+All Users:
+  You will need to setup the funannotate databases using funannotate setup.
+  The location of these databases on the file system is your decision and the
+  location can be defined using the FUNANNOTATE_DB environmental variable.
+  
+  To set this up in your conda environment you can run the following:
+    echo "export FUNANNOTATE_DB=/your/path" > /nethome/bdy8/mambaforge/envs/funannotate_env/etc/conda/activate.d/funannotate.sh
+    echo "unset FUNANNOTATE_DB" > /nethome/bdy8/mambaforge/envs/funannotate_env/etc/conda/deactivate.d/funannotate.sh
+  
+  You can then run your database setup using funannotate:
+    funannotate setup -i all
+    
+  Due to licensing restrictions, if you want to use GeneMark-ES/ET, you will need to install manually:
+  download and follow directions at http://topaz.gatech.edu/GeneMark/license_download.cgi
+  ** note you will likely need to change shebang line for all perl scripts:
+    change: #!/usr/bin/perl to #!/usr/bin/env perl
+
+```{bash making the funannoate db variable in the conda environment}
+#need to activate environment first 
+mamba activate funannotate_env
+
+#checking to see if any variables present
+conda env config vars list
+
+#setting the PASAHOME var 
+conda env config vars set FUNANNOTATE_DB=/scratch/projects/omics/ofav_genome/funannotate_db
+
+#have to then reactivate the shell
+mamba activate funannotate_env
+
+##checks to see if it works
+#should print the path, it does
+echo $FUNANNOTATE_DB
+```
+
+And also installing GeneMark-ES/ET (http://topaz.gatech.edu/GeneMark/license_download.cgi). I used the `GeneMark-ES/ET/EP+ ver 4.71_lic` one. 
+
+```{bash installing genemark}
+## put it in the environment opt directory. 
+tar -xzvf gmes_linux_64.tar.gz
+mamba activate funannotate_env
+mamba env config vars list
+mamba env config vars set GENEMARK_PATH=/nethome/bdy8/mambaforge/envs/funannotate_env/opt/gmes_linux_64
+mamba activate funannotate_env
+echo $GENEMARK_PATH
+```
+
+And the GM key from the `INSTALL` instructions in `GeneMark.` Not sure if it needs to be renamed to just `gm_key` or `gm_key_64` so I have done both. 
+
+```{bash and the gm_key thingy}
+gunzip gm_key_64.gz
+cp gm_key_64 ~/.gm_key
+cp gm_key_64 ~/.gm_key_64
+```
+
+Now we can set up the databases. 
+
+```{bash setting up all the databases}
+funannotate setup -i all
+##for updating
+#funannotate setup -i all --update
+```
+
+```{bash checking the busco datbases, include = F}
+funannotate database --show-outgroups
+funannotate database --show-buscos
+```
+
+We can also install some additional programs that will be used in the `funannotate::annotation` step. 
+
+```{bash installing eggnogmapper}
+mamba activate funannotate_env
+mamba install -c bioconda eggnog-mapper
+conda env config vars list
+conda env config vars set EGGNOG_DATA_DIR=/scratch/projects/omics/ofav_genome/eggnog_db
+mamba activate funannotate_env
+echo $EGGNOG_DATA_DIR
+download_eggnog_data.py 
+```
+
+And now testing the installation 
+
+```{bash funannotate test run}
+#BSUB -P coral_omics
+#BSUB -q bigmem
+#BSUB -W 48:00
+#BSUB -J fun_test
+#BSUB -n 6
+#BSUB -R "rusage[mem=10000]"
+#BSUB -e /scratch/projects/omics/ofav_genome/funannotate/test/fun_test.err
+#BSUB -o /scratch/projects/omics/ofav_genome/funannotate/test/fun_test.out
+
+cd /scratch/projects/omics/ofav_genome/funannotate/test
+funannotate test -t all --cpus 2
+```
+
+This completes succesfully yay. 
+
+Now running through the main steps of the `funannotate` pipeline and whether I did them (or did not due to them being done previously). 
+
+### 4.1 - Clean
+Removing small repetitive contigs that are contained in larger scaffolds. *NOT DOING* as I only have 40ish contigs. 
+
+
+### 4.2 - Sort 
+Sorting and renaming the fasta. Important if fasta headers are >16 as this can mess up programs. Mine are all <16 characters so I am again *NOT DOING* this step here (i.e. done prviously). 
+
+
+### 4.3 - Mask
+This is *required* in `funannotate`, and it requires a softmasked genome assembly. I have already done this with `repeatmodeler` and `repeatmasker` so again *NOT DOING* here. 
+
+
+### 4.4 - Train
+The `funannotate::train` is a wrapper script for genome-guided `Trinity` RNA-seq assembly followed by `PASA` assembly and will produce the inputs needed for the next step `funannotate::predict` (i.e. coord-sorted BAM alignments, trinity transcripts and high quality PASA GFF3 annotation). 
+
+For the *Orbicella faveolata* genome I have run this PASA step prior with the hq_transcripts.fasta from the `isoseq` pipeline. Thus for input I will use the outputs from my previous `PASA` run. 
+
+
+### 4.5 - Predict
+
+As it says in the documentation, this is the 'meat and potatoes' of `funannotate`. It parses the supplied data and chooses the best method to train the ab-initio gene predictors `Augustus` and `GeneMark`. After training of the predictors, it runs `Evidence Modeler` to generate consensus gene models from all the data. 
+
+Useful links
+https://github.com/nextgenusfs/funannotate/issues/775 
+https://github.com/nextgenusfs/funannotate/issues/902 - which pasa gff to use
+https://github.com/nextgenusfs/funannotate/issues/528 - transdecoder transcripts
+https://github.com/TransDecoder/TransDecoder/issues/54 - more help 
+
+```{text funannotate predict parameters, include = F}
+Usage:       funannotate predict <arguments>
+version:     1.8.14
+
+Description: Script takes genome multi-fasta file and a variety of inputs to do a comprehensive whole
+             genome gene prediction.  Uses AUGUSTUS, GeneMark, Snap, GlimmerHMM, BUSCO, EVidence Modeler,
+             tbl2asn, tRNAScan-SE, Exonerate, minimap2.
+Required:
+  -i, --input              Genome multi-FASTA file (softmasked repeats)
+  -o, --out                Output folder name
+  -s, --species            Species name, use quotes for binomial, e.g. "Aspergillus fumigatus"
+
+Optional:
+  -p, --parameters         Ab intio parameters JSON file to use for gene predictors
+  --isolate                Isolate name, e.g. Af293
+  --strain                 Strain name, e.g. FGSCA4
+  --name                   Locus tag name (assigned by NCBI?). Default: FUN_
+  --numbering              Specify where gene numbering starts. Default: 1
+  --maker_gff              MAKER2 GFF file. Parse results directly to EVM.
+  --pasa_gff               PASA generated gene models. filename:weight
+  --other_gff              Annotation pass-through to EVM. filename:weight
+  --rna_bam                RNA-seq mapped to genome to train Augustus/GeneMark-ET
+  --stringtie              StringTie GTF result
+  -w, --weights            Ab-initio predictor and EVM weight. Example: augustus:2 or pasa:10
+  --augustus_species       Augustus species config. Default: uses species name
+  --min_training_models    Minimum number of models to train Augustus. Default: 200
+  --genemark_mode          GeneMark mode. Default: ES [ES,ET]
+  --genemark_mod           GeneMark ini mod file
+  --busco_seed_species     Augustus pre-trained species to start BUSCO. Default: anidulans
+  --optimize_augustus      Run 'optimze_augustus.pl' to refine training (long runtime)
+  --busco_db               BUSCO models. Default: dikarya. `funannotate outgroups --show_buscos`
+  --organism               Fungal-specific options. Default: fungus. [fungus,other]
+  --ploidy                 Ploidy of assembly. Default: 1
+  -t, --tbl2asn            Assembly parameters for tbl2asn. Default: "-l paired-ends"
+  -d, --database           Path to funannotate database. Default: $FUNANNOTATE_DB
+
+  --protein_evidence       Proteins to map to genome (prot1.fa prot2.fa uniprot.fa). Default: uniprot.fa
+  --protein_alignments     Pre-computed protein alignments in GFF3 format
+  --p2g_pident             Exonerate percent identity. Default: 80
+  --p2g_diamond_db         Premade diamond genome database for protein2genome mapping
+  --p2g_prefilter          Pre-filter hits software selection. Default: diamond [tblastn]
+  --transcript_evidence    mRNA/ESTs to align to genome (trans1.fa ests.fa trinity.fa). Default: none
+  --transcript_alignments  Pre-computed transcript alignments in GFF3 format
+  --augustus_gff           Pre-computed AUGUSTUS GFF3 results (must use --stopCodonExcludedFromCDS=False)
+  --genemark_gtf           Pre-computed GeneMark GTF results
+  --trnascan               Pre-computed tRNAscanSE results
+
+  --min_intronlen          Minimum intron length. Default: 10
+  --max_intronlen          Maximum intron length. Default: 3000
+  --soft_mask              Softmasked length threshold for GeneMark. Default: 2000
+  --min_protlen            Minimum protein length. Default: 50
+  --repeats2evm            Use repeats in EVM consensus model building
+  --keep_evm               Keep existing EVM results (for rerunning pipeline)
+  --evm-partition-interval Min length between genes to make a partition: Default: 1500
+  --no-evm-partitions      Do not split contigs into partitions
+  --repeat_filter          Repetitive gene model filtering. Default: overlap blast [overlap,blast,none]
+  --keep_no_stops          Keep gene models without valid stops
+  --SeqCenter              Sequencing facilty for NCBI tbl file. Default: CFMR
+  --SeqAccession           Sequence accession number for NCBI tbl file. Default: 12345
+  --force                  Annotated unmasked genome
+  --cpus                   Number of CPUs to use. Default: 2
+  --no-progress            Do not print progress to stdout for long sub jobs
+  --tmpdir                 Volume/location to write temporary files. Default: /tmp
+  --header_length          Maximum length of FASTA headers. Default: 16
+
+ENV Vars:  If not specified at runtime, will be loaded from your $PATH
+  --EVM_HOME
+  --AUGUSTUS_CONFIG_PATH
+  --GENEMARK_PATH
+  --BAMTOOLS_PATH
+```
+
+```{bash funannotate predict script}
+#BSUB -P coral_omics
+#BSUB -q bigmem
+#BSUB -W 100:00
+#BSUB -J fun_predict
+#BSUB -n 8
+#BSUB -R "rusage[mem=20000]"
+#BSUB -e /scratch/projects/omics/ofav_genome/funannotate/step_5_predict/fun_pred.err
+#BSUB -o /scratch/projects/omics/ofav_genome/funannotate/step_5_predict/fun_pred.out
+
+cd /scratch/projects/omics/ofav_genome/funannotate/step_5_predict
+funannotate predict \
+--input /scratch/projects/omics/ofav_genome/repeatmasker_soft/ofav_ntlink_clean_sort.fa.masked \
+--out /scratch/projects/omics/ofav_genome/funannotate/step_5_predict \
+--species "Orbicella faveolata" \
+--strain gen_17 \
+--name Ofa \
+--rna_bam /scratch/projects/omics/ofav_genome/pasa/hq_transcripts_edited.fasta.clean.mm2.bam \
+--pasa_gff /scratch/projects/omics/ofav_genome/pasa/ofav_db.sqlite.assemblies.fasta.transdecoder.genome.gff3 \
+--organism other \
+--repeats2evm \
+--transcript_evidence /scratch/projects/omics/ofav_genome/pasa/hq_transcripts_edited.fasta.clean \
+--keep_evm \
+--optimize_augustus \
+--cpus 8
+```
+
+https://github.com/nextgenusfs/funannotate/issues/920 - info on `species`, `busco_seed_species`, `augustus_species`. 
+https://github.com/nextgenusfs/funannotate/issues/251 - info on `busco_seed_species`
+*DO NOT NEED BUSCO_SEED_SPECIES AS USING PASA GFF3 FILE*
+
+Options from `funannotate::species` to find most cloesly related to train augustsus. 
+- Hydra_vulgaris (fresh water polyp) *BEST SO FAR*
+- Cassiopea_xamachana (upside down jellyfish)
+low exonarate - https://github.com/nextgenusfs/funannotate/issues/228 
+
+Maybe good to set the `--ploidy` flag to 2
+Had low predicitons from augustus, added the `--optimise_augustus` flag which brought this above 20% for the gene and no error was thrown yay. 
+
+### 4.6 - Update
+
+This script updates gene models from *4.5 - Predict* using RNA-seq data. 
+
+RNA-seq –> Trinity –> PASA –> Kallisto
+
+```{bash getting rna-seq data for trinity run}
+#BSUB -P coral_omics
+#BSUB -q general
+#BSUB -W 100:00
+#BSUB -J rr_down
+#BSUB -n 2
+#BSUB -e /scratch/projects/omics/ofav_genome/trin_ofav_nm/raw_reads/rr_down.err
+#BSUB -o /scratch/projects/omics/ofav_genome/trin_ofav_nm/raw_reads/rr_down.out
+
+## https://www.ncbi.nlm.nih.gov/sra
+cd /scratch/projects/omics/ofav_genome/trin_ofav_nm/raw_reads
+#prefetch SRR14577727 --max-size 420000000000
+prefetch SRR14577728 --max-size 420000000000
+prefetch SRR14577729 --max-size 420000000000
+prefetch SRR14577730 --max-size 420000000000
+prefetch SRR14577731 --max-size 420000000000
+prefetch SRR14577732 --max-size 420000000000
+prefetch SRR14577734 --max-size 420000000000
+prefetch SRR14577735 --max-size 420000000000
+prefetch SRR14577736 --max-size 420000000000
+
+#fastq-dump --defline-seq '@$sn[_$rn]/$ri' --split-files SRR14577727
+fastq-dump --defline-seq '@$sn[_$rn]/$ri' --split-files SRR14577728
+fastq-dump --defline-seq '@$sn[_$rn]/$ri' --split-files SRR14577729
+fastq-dump --defline-seq '@$sn[_$rn]/$ri' --split-files SRR14577730
+fastq-dump --defline-seq '@$sn[_$rn]/$ri' --split-files SRR14577731
+fastq-dump --defline-seq '@$sn[_$rn]/$ri' --split-files SRR14577732
+fastq-dump --defline-seq '@$sn[_$rn]/$ri' --split-files SRR14577734 
+fastq-dump --defline-seq '@$sn[_$rn]/$ri' --split-files SRR14577735
+fastq-dump --defline-seq '@$sn[_$rn]/$ri' --split-files SRR14577736
+
+rm -r SRR14577727 SRR14577728 SRR14577729 SRR14577730 SRR14577731 SRR14577732 SRR14577734 SRR14577735 SRR14577736
+
+wc -l SRR14577727_1.fastq SRR14577727_2.fastq \
+SRR14577728_1.fastq SRR14577728_2.fastq \
+SRR14577729_1.fastq SRR14577729_2.fastq \
+SRR14577730_1.fastq SRR14577730_2.fastq \
+SRR14577731_1.fastq SRR14577731_2.fastq \
+SRR14577732_1.fastq SRR14577732_2.fastq \
+SRR14577734_1.fastq SRR14577734_2.fastq \
+SRR14577735_1.fastq SRR14577735_2.fastq \
+SRR14577736_1.fastq SRR14577736_2.fastq
+```
+
+https://github.com/trinityrnaseq/trinityrnaseq/issues/448
+
+  95879296 SRR14577727_1.fastq
+  95879296 SRR14577727_2.fastq
+  99728196 SRR14577728_1.fastq
+  99728196 SRR14577728_2.fastq
+  108917732 SRR14577729_1.fastq
+  108917732 SRR14577729_2.fastq
+  92909908 SRR14577730_1.fastq
+  92909908 SRR14577730_2.fastq
+  96600440 SRR14577731_1.fastq
+  96600440 SRR14577731_2.fastq
+  94194600 SRR14577732_1.fastq
+  94194600 SRR14577732_2.fastq
+  107629160 SRR14577734_1.fastq
+  107629160 SRR14577734_2.fastq
+  92428016 SRR14577735_1.fastq
+  92428016 SRR14577735_2.fastq
+  99331560 SRR14577736_1.fastq
+  99331560 SRR14577736_2.fastq
+
+```{bash fixing 3rd line headers}
+#SRR14577727
+sed 's/+SRR14577727.*$/+/g' SRR14577727_1.fastq > samp1_r1.fastq
+sed 's/+SRR14577727.*$/+/g' SRR14577727_2.fastq > samp1_r2.fastq
+
+sed 's/+SRR14577728.*$/+/g' SRR14577728_1.fastq > samp2_r1.fastq
+sed 's/+SRR14577728.*$/+/g' SRR14577728_2.fastq > samp2_r2.fastq
+
+sed 's/+SRR14577729.*$/+/g' SRR14577729_1.fastq > samp3_r1.fastq
+sed 's/+SRR14577729.*$/+/g' SRR14577729_2.fastq > samp3_r2.fastq
+
+sed 's/+SRR14577730.*$/+/g' SRR14577730_1.fastq > samp4_r1.fastq
+sed 's/+SRR14577730.*$/+/g' SRR14577730_2.fastq > samp4_r2.fastq
+
+sed 's/+SRR14577731.*$/+/g' SRR14577731_1.fastq > samp5_r1.fastq
+sed 's/+SRR14577731.*$/+/g' SRR14577731_2.fastq > samp5_r2.fastq
+
+sed 's/+SRR14577732.*$/+/g' SRR14577732_1.fastq > samp6_r1.fastq
+sed 's/+SRR14577732.*$/+/g' SRR14577732_2.fastq > samp6_r2.fastq
+
+sed 's/+SRR14577734.*$/+/g' SRR14577734_1.fastq > samp7_r1.fastq
+sed 's/+SRR14577734.*$/+/g' SRR14577734_2.fastq > samp7_r2.fastq
+
+sed 's/+SRR14577735.*$/+/g' SRR14577735_1.fastq > samp8_r1.fastq
+sed 's/+SRR14577735.*$/+/g' SRR14577735_2.fastq > samp8_r2.fastq
+
+sed 's/+SRR14577736.*$/+/g' SRR14577736_1.fastq > samp9_r1.fastq
+sed 's/+SRR14577736.*$/+/g' SRR14577736_2.fastq > samp9_r2.fastq
+```
+
+
+```{text funannotate update options}
+Usage:       funannotate update <arguments>
+version:     1.8.15
+
+Description: Script will run PASA mediated update of gene models. It can directly update
+             the annotation from an NCBI downloaded GenBank file using RNA-seq data or can be
+             used after funannotate predict to refine UTRs and gene model predictions. Kallisto
+             is used to evidence filter most likely PASA gene models. Dependencies are
+             hisat2, Trinity, samtools, fasta, minimap2, PASA, kallisto, bedtools.
+
+Required:
+  -i, --input              Funannotate folder or Genome in GenBank format (.gbk,.gbff).
+    or
+  -f, --fasta              Genome in FASTA format
+  -g, --gff                Annotation in GFF3 format
+  --species                Species name, use quotes for binomial, e.g. "Aspergillus fumigatus"
+
+Optional:
+  -o, --out                Output folder name
+  -l, --left               Left/Forward FASTQ Illumina reads (R1)
+  -r, --right              Right/Reverse FASTQ Illumina reads (R2)
+  -s, --single             Single ended FASTQ reads
+  --stranded               If RNA-seq library stranded. [RF,FR,F,R,no]
+  --left_norm              Normalized left FASTQ reads (R1)
+  --right_norm             Normalized right FASTQ reads (R2)
+  --single_norm            Normalized single-ended FASTQ reads
+  --pacbio_isoseq          PacBio long-reads
+  --nanopore_cdna          Nanopore cDNA long-reads
+  --nanopore_mrna          Nanopore mRNA direct long-reads
+  --trinity                Pre-computed Trinity transcripts (FASTA)
+  --jaccard_clip           Turn on jaccard clip for dense genomes [Recommended for fungi]
+  --no_normalize_reads     Skip read Normalization
+  --no_trimmomatic         Skip Quality Trimming of reads
+  --memory                 RAM to use for Jellyfish. Default: 50G
+  -c, --coverage           Depth to normalize reads. Default: 50
+  -m, --min_coverage       Min depth for normalizing reads. Default: 5
+  --pasa_config            PASA assembly config file, i.e. from previous PASA run
+  --pasa_db                Database to use. Default: sqlite [mysql,sqlite]
+  --pasa_alignment_overlap PASA --stringent_alignment_overlap. Default: 30.0
+  --aligners               Aligners to use with PASA: Default: minimap2 blat [gmap]
+  --pasa_min_pct_aligned   PASA --MIN_PERCENT_ALIGNED. Default: 90
+  --pasa_min_avg_per_id    PASA --MIN_AVG_PER_ID. Default: 95
+  --pasa_num_bp_splice     PASA --NUM_BP_PERFECT_SPLICE_BOUNDARY. Default: 3
+  --max_intronlen          Maximum intron length. Default: 3000
+  --min_protlen            Minimum protein length. Default: 50
+  --alt_transcripts        Expression threshold (percent) to keep alt transcripts. Default: 0.1 [0-1]
+  --p2g                    NCBI p2g file (if updating NCBI annotation)
+  -t, --tbl2asn            Assembly parameters for tbl2asn. Example: "-l paired-ends"
+  --name                   Locus tag name (assigned by NCBI?). Default: use existing
+  --sbt                    NCBI Submission file
+  --species                Species name, use quotes for binomial, e.g. "Aspergillus fumigatus"
+  --strain                 Strain name
+  --isolate                Isolate name
+  --SeqCenter              Sequencing facilty for NCBI tbl file. Default: CFMR
+  --SeqAccession           Sequence accession number for NCBI tbl file. Default: 12345
+  --cpus                   Number of CPUs to use. Default: 2
+  --no-progress            Do not print progress to stdout for long sub jobs
+
+ENV Vars:  If not passed, will try to load from your $PATH.
+  --PASAHOME
+  --TRINITYHOME
+```
+
+wc -l SRR14577727_1.fastq SRR14577727_2.fastq \
+SRR14577728_1.fastq SRR14577728_2.fastq \
+SRR14577729_1.fastq SRR14577729_2.fastq \
+SRR14577730_1.fastq SRR14577730_2.fastq \
+SRR14577731_1.fastq SRR14577731_2.fastq \
+SRR14577732_1.fastq SRR14577732_2.fastq \
+SRR14577734_1.fastq SRR14577734_2.fastq \
+SRR14577735_1.fastq SRR14577735_2.fastq \
+SRR14577736_1.fastq SRR14577736_2.fastq
+
+```{bash funannotate update command}
+#BSUB -P coral_omics
+#BSUB -q bigmem
+#BSUB -W 120:00
+#BSUB -J trin_update
+#BSUB -n 10
+#BSUB -R "rusage[mem=20000]"
+#BSUB -e /scratch/projects/omics/ofav_genome/funannotate/step_6_update/trin_update.err
+#BSUB -o /scratch/projects/omics/ofav_genome/funannotate/step_6_update/trin_update.out
+
+cd /scratch/projects/omics/ofav_genome/trin_ofav_nm/raw_reads
+#sed 's/+SRR14577727.*$/+/g' SRR14577727_1.fastq > samp1_r1.fastq
+#sed 's/+SRR14577727.*$/+/g' SRR14577727_2.fastq > samp1_r2.fastq
+#sed 's/+SRR14577728.*$/+/g' SRR14577728_1.fastq > samp2_r1.fastq
+#sed 's/+SRR14577728.*$/+/g' SRR14577728_2.fastq > samp2_r2.fastq
+#sed 's/+SRR14577729.*$/+/g' SRR14577729_1.fastq > samp3_r1.fastq
+#sed 's/+SRR14577729.*$/+/g' SRR14577729_2.fastq > samp3_r2.fastq
+#sed 's/+SRR14577730.*$/+/g' SRR14577730_1.fastq > samp4_r1.fastq
+#sed 's/+SRR14577730.*$/+/g' SRR14577730_2.fastq > samp4_r2.fastq
+#sed 's/+SRR14577731.*$/+/g' SRR14577731_1.fastq > samp5_r1.fastq
+#sed 's/+SRR14577731.*$/+/g' SRR14577731_2.fastq > samp5_r2.fastq
+#sed 's/+SRR14577732.*$/+/g' SRR14577732_1.fastq > samp6_r1.fastq
+#sed 's/+SRR14577732.*$/+/g' SRR14577732_2.fastq > samp6_r2.fastq
+#sed 's/+SRR14577734.*$/+/g' SRR14577734_1.fastq > samp7_r1.fastq
+#sed 's/+SRR14577734.*$/+/g' SRR14577734_2.fastq > samp7_r2.fastq
+#sed 's/+SRR14577735.*$/+/g' SRR14577735_1.fastq > samp8_r1.fastq
+#sed 's/+SRR14577735.*$/+/g' SRR14577735_2.fastq > samp8_r2.fastq
+#sed 's/+SRR14577736.*$/+/g' SRR14577736_1.fastq > samp9_r1.fastq
+#sed 's/+SRR14577736.*$/+/g' SRR14577736_2.fastq > samp9_r2.fastq
+
+funannotate update \
+-i /scratch/projects/omics/ofav_genome/funannotate/step_5_predict \
+--cpus 8 \
+--left samp1_r1.fastq samp2_r1.fastq samp3_r1.fastq samp4_r1.fastq samp5_r1.fastq samp6_r1.fastq samp7_r1.fastq samp8_r1.fastq samp9_r1.fastq \
+--right samp1_r2.fastq samp2_r2.fastq samp3_r2.fastq samp4_r2.fastq samp5_r2.fastq samp6_r2.fastq samp7_r2.fastq samp8_r2.fastq samp9_r2.fastq \
+--memory 100G \
+--pacbio_isoseq ../../pasa/hq_transcripts_edited.fasta \
+--name QW917 \
+--species "Orbicella faveolata" \
+--strain gen_17 \
+--out /scratch/projects/omics/ofav_genome/funannotate/step_6_update
+```
+
+Need to rename the fastq files accordingly
+https://github.com/trinityrnaseq/trinityrnaseq/issues/586 
+
+Okay, so this will trim and then crash due to the error in this - https://github.com/nextgenusfs/funannotate/issues/634
+
+So using the grep commands to fix
+
+```{bash}
+cd /scratch/projects/omics/ofav_genome/funannotate/step_5_predict/update_misc/trimmomatic
+pigz -dc SRR13498932x_1.fastq.gz | sed 's,[[:space:]][[:digit:]]*,,g' | pigz > left_reads.fastq.gz
+pigz -dc SRR13498932x_2.fastq.gz | sed 's,[[:space:]][[:digit:]]*,,g' | pigz > right_reads.fastq.gz
+```
+
+
+### 4.7 - Annotate
+
+Run after *4.5 - Predict* or *4.6 - Update* and assigns the funcitonal annotation to the protein coding gene models. The best functional annotation will occur when `InterProScan` is run on the proteins prior to this step. 
+
+```{bash installing interproscan}
+mamba create -n interproscan_env -c conda-forge -c bioconda interproscan
+```
+
+The databases are huge and consequently not shipped within this installation.
+Please download and install the Databases manually by following the commands below:
+!!! /!\ Edit the 2 first lines to match the wished version of the DB /!\ !!!
+
+Commands:
+- See here for latest db available: https://github.com/ebi-pf-team/interproscan or http://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/
+- Set versions
+version_major=5.59
+version_minor=91.0
+CONDA_PREFIX=/the/path/to/your/interproscan/conda/env/
+
+get the md5 of the databases
+wget http://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/${version_major}-${version_minor}/interproscan-${version_major}-${version_minor}-64-bit.tar.gz.md5
+get the databases (with core because much faster to download)
+wget http://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/${version_major}-${version_minor}/interproscan-${version_major}-${version_minor}-64-bit.tar.gz
+checksum
+md5sum -c interproscan-${version_major}-${version_minor}-64-bit.tar.gz.md5
+untar gz
+tar xvzf interproscan-${version_major}-${version_minor}-64-bit.tar.gz
+remove the sample DB bundled by default
+rm -rf $CONDA_PREFIX/share/InterProScan/data/
+copy the new db
+cp -r interproscan-${version_major}-${version_minor}/data $CONDA_PREFIX/share/InterProScan/
+
+INFO:
+Phobius (licensed software), SignalP, SMART (licensed components) and TMHMM use
+licensed code and data provided by third parties. If you wish to run these
+analyses it will be necessary for you to obtain a licence from the vendor and
+configure your local InterProScan installation to use them.
+(see more information in $CONDA_PREFIX/share/InterProScan/data/<db>)
+
+```{bash making variables for downloads}
+## going to http://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/ to get the infor for major and minor
+version_major=5.62
+version_minor=94.0
+CONDA_PREFIX=/nethome/bdy8/mambaforge/envs/interproscan_env
+```
+
+```{bash downloading data file for interproscan}
+# get the md5 of the databases
+wget http://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/${version_major}-${version_minor}/interproscan-${version_major}-${version_minor}-64-bit.tar.gz.md5
+# get the databases (with core because much faster to download)
+wget http://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/${version_major}-${version_minor}/interproscan-${version_major}-${version_minor}-64-bit.tar.gz
+# checksum
+md5sum -c interproscan-${version_major}-${version_minor}-64-bit.tar.gz.md5
+# untar gz
+tar xvzf interproscan-${version_major}-${version_minor}-64-bit.tar.gz
+# remove the sample DB bundled by default
+rm -rf $CONDA_PREFIX/share/InterProScan/data/
+# copy the new db
+cp -r interproscan-${version_major}-${version_minor}/data $CONDA_PREFIX/share/InterProScan/
+```
+
+Now need to install the licensed things. Interproscan documentation has good instructions on what to do (https://interproscan-docs.readthedocs.io/en/latest/ActivatingLicensedAnalyses.html) 
+- Phobius - https://phobius.sbc.su.se/
+- SignalP - http://www.cbs.dtu.dk/services/SignalP/
+- TMHM - http://www.cbs.dtu.dk/services/TMHMM/
+There is information on these in /nethome/bdy8/mambaforge/envs/interproscan_env/share/InterProScan/data
+
+I have archived these programs in the google drive. 
+
+```{bash phobious 1.0.1 installation}
+tar -xzvf phobius101_linux.tar.gz
+#### DONE ####
+## mv all to the phobius directory, they all stored in tmp/something/something
+```
+
+Files required by InterProScan:
+-bin/phobius/1.01/decodeanhmm
+-bin/phobius/1.01/phobius.model
+-bin/phobius/1.01/phobius.options
+-bin/phobius/1.01/phobius.pl
+
+```{bash signalp 4.1 installation}
+wget https://services.healthtech.dtu.dk/download/441a2c76-9740-42a8-b333-cc1398ade43b/signalp-4.1g.Linux.tar.gz
+wget https://services.healthtech.dtu.dk/download/441a2c76-9740-42a8-b333-cc1398ade43b/signalp-4.1_license.txt
+tar -xzvf signalp-4.1g.Linux.tar.gz
+#### DONE ####
+```
+
+Files required by InterProScan:
+-bin/signalp/4.1/signalp
+-bin/signalp/4.1/bin/nnhowplayer.Linux_i386
+-bin/signalp/4.1/bin/nnhowplayer.Linux_i486
+-bin/signalp/4.1/bin/nnhowplayer.Linux_i586
+-bin/signalp/4.1/bin/nnhowplayer.Linux_i686
+-bin/signalp/4.1/bin/nnhowplayer.Linux_ia64
+-bin/signalp/4.1/bin/nnhowplayer.Linux_x86_64
+
+```{bash tmhmm 2.0c installation }
+tar -xzvf tmhmm-2.0c.Linux.tar.gz
+#### DONE ####
+```
+
+Files required by InterProScan:
+-bin/tmhmm/2.0c/decodeanhmm
+-data/tmhmm/2.0c/TMHMM2.0c.model
+
+Add all the paths to these programs to the `interproscan.properties` at /nethome/bdy8/mambaforge/envs/interproscan_env/share/InterProScan
+
+```{text interproscan documentation and check, include = F}
+interproscan.sh 
+26/06/2023 16:02:16:402 Welcome to InterProScan-5.59-91.0
+26/06/2023 16:02:16:403 Running InterProScan v5 in STANDALONE mode... on Linux
+usage: java -XX:+UseParallelGC -XX:ParallelGCThreads=2 -XX:+AggressiveOpts -XX:+UseFastAccessorMethods -Xms128M
+            -Xmx2048M -jar interproscan-5.jar
+
+
+Please give us your feedback by sending an email to
+
+interhelp@ebi.ac.uk
+
+ -appl,--applications <ANALYSES>                           Optional, comma separated list of analyses.  If this option
+                                                           is not set, ALL analyses will be run.
+ -b,--output-file-base <OUTPUT-FILE-BASE>                  Optional, base output filename (relative or absolute path).
+                                                           Note that this option, the --output-dir (-d) option and the
+                                                           --outfile (-o) option are mutually exclusive.  The
+                                                           appropriate file extension for the output format(s) will be
+                                                           appended automatically. By default the input file path/name
+                                                           will be used.
+ -cpu,--cpu <CPU>                                          Optional, number of cores for inteproscan.
+ -d,--output-dir <OUTPUT-DIR>                              Optional, output directory.  Note that this option, the
+                                                           --outfile (-o) option and the --output-file-base (-b) option
+                                                           are mutually exclusive. The output filename(s) are the same
+                                                           as the input filename, with the appropriate file extension(s)
+                                                           for the output format(s) appended automatically .
+ -dp,--disable-precalc                                     Optional.  Disables use of the precalculated match lookup
+                                                           service.  All match calculations will be run locally.
+ -dra,--disable-residue-annot                              Optional, excludes sites from the XML, JSON output
+ -etra,--enable-tsv-residue-annot                          Optional, includes sites in TSV output
+ -exclappl,--excl-applications <EXC-ANALYSES>              Optional, comma separated list of analyses you want to
+                                                           exclude.
+ -f,--formats <OUTPUT-FORMATS>                             Optional, case-insensitive, comma separated list of output
+                                                           formats. Supported formats are TSV, XML, JSON, and GFF3.
+                                                           Default for protein sequences are TSV, XML and GFF3, or for
+                                                           nucleotide sequences GFF3 and XML.
+ -goterms,--goterms                                        Optional, switch on lookup of corresponding Gene Ontology
+                                                           annotation (IMPLIES -iprlookup option)
+ -help,--help                                              Optional, display help information
+ -i,--input <INPUT-FILE-PATH>                              Optional, path to fasta file that should be loaded on Master
+                                                           startup. Alternatively, in CONVERT mode, the InterProScan 5
+                                                           XML file to convert.
+ -incldepappl,--incl-dep-applications <INC-DEP-ANALYSES>   Optional, comma separated list of deprecated analyses that
+                                                           you want included.  If this option is not set, deprecated
+                                                           analyses will not run.
+ -iprlookup,--iprlookup                                    Also include lookup of corresponding InterPro annotation in
+                                                           the TSV and GFF3 output formats.
+ -ms,--minsize <MINIMUM-SIZE>                              Optional, minimum nucleotide size of ORF to report. Will only
+                                                           be considered if n is specified as a sequence type. Please be
+                                                           aware of the fact that if you specify a too short value it
+                                                           might be that the analysis takes a very long time!
+ -o,--outfile <EXPLICIT_OUTPUT_FILENAME>                   Optional explicit output file name (relative or absolute
+                                                           path).  Note that this option, the --output-dir (-d) option
+                                                           and the --output-file-base (-b) option are mutually
+                                                           exclusive. If this option is given, you MUST specify a single
+                                                           output format using the -f option.  The output file name will
+                                                           not be modified. Note that specifying an output file name
+                                                           using this option OVERWRITES ANY EXISTING FILE.
+ -pa,--pathways                                            Optional, switch on lookup of corresponding Pathway
+                                                           annotation (IMPLIES -iprlookup option)
+ -t,--seqtype <SEQUENCE-TYPE>                              Optional, the type of the input sequences (dna/rna (n) or
+                                                           protein (p)).  The default sequence type is protein.
+ -T,--tempdir <TEMP-DIR>                                   Optional, specify temporary file directory (relative or
+                                                           absolute path). The default location is temp/.
+ -verbose,--verbose                                        Optional, display more verbose log output
+ -version,--version                                        Optional, display version number
+ -vl,--verbose-level <VERBOSE-LEVEL>                       Optional, display verbose log output at level specified.
+ -vtsv,--output-tsv-version                                Optional, includes a TSV version file along with any TSV
+                                                           output (when TSV output requested)
+Copyright © EMBL European Bioinformatics Institute, Hinxton, Cambridge, UK. (http://www.ebi.ac.uk) The InterProScan
+software itself is provided under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0.html).
+Third party components (e.g. member database binaries and models) are subject to separate licensing - please see the
+individual member database websites for details.
+
+Available analyses:
+                      TIGRFAM (15.0) : TIGRFAMs are protein families based on hidden Markov models (HMMs).
+                       FunFam (4.3.0) : Prediction of functional annotations for novel, uncharacterized sequences.
+                         SFLD (4) : SFLD is a database of protein families based on hidden Markov models (HMMs).
+                      Phobius (1.01) : A combined transmembrane topology and signal peptide predictor.
+        SignalP_GRAM_NEGATIVE (4.1) : SignalP (gram-negative) predicts the presence and location of signal peptide cleavage sites in amino acid sequences for gram-negative prokaryotes.
+                  SUPERFAMILY (1.75) : SUPERFAMILY is a database of structural and functional annotations for all proteins and genomes.
+                      PANTHER (17.0) : The PANTHER (Protein ANalysis THrough Evolutionary Relationships) Classification System is a unique resource that classifies genes by their functions, using published scientific experimental evidence and evolutionary relationships to predict function even in the absence of direct experimental evidence.
+                       Gene3D (4.3.0) : Structural assignment for whole genes and genomes using the CATH domain structure database.
+                        Hamap (2021_04) : High-quality Automated and Manual Annotation of Microbial Proteomes.
+              ProSiteProfiles (2022_01) : PROSITE consists of documentation entries describing protein domains, families and functional sites as well as associated patterns and profiles to identify them.
+                        Coils (2.2.1) : Prediction of coiled coil regions in proteins.
+                        SMART (7.1) : SMART allows the identification and analysis of domain architectures based on hidden Markov models (HMMs). 
+                          CDD (3.18) : CDD predicts protein domains and families based on a collection of well-annotated multiple sequence alignment models.
+                       PRINTS (42.0) : A compendium of protein fingerprints - a fingerprint is a group of conserved motifs used to characterise a protein family.
+                        PIRSR (2021_05) : PIRSR is a database of protein families based on hidden Markov models (HMMs) and Site Rules.
+              ProSitePatterns (2022_01) : PROSITE consists of documentation entries describing protein domains, families and functional sites as well as associated patterns and profiles to identify them.
+                      AntiFam (7.0) : AntiFam is a resource of profile-HMMs designed to identify spurious protein predictions.
+                  SignalP_EUK (4.1) : SignalP (eukaryotes) predicts the presence and location of signal peptide cleavage sites in amino acid sequences for eukaryotes.
+                         Pfam (35.0) : A large collection of protein families, each represented by multiple sequence alignments and hidden Markov models (HMMs).
+                   MobiDBLite (2.0) : Prediction of intrinsically disordered regions in proteins.
+        SignalP_GRAM_POSITIVE (4.1) : SignalP (gram-positive) predicts the presence and location of signal peptide cleavage sites in amino acid sequences for gram-positive prokaryotes.
+                        PIRSF (3.10) : The PIRSF concept is used as a guiding principle to provide comprehensive and non-overlapping clustering of UniProtKB sequences into a hierarchical order to reflect their evolutionary relationships.
+                        TMHMM (2.0c) : Prediction of transmembrane helices in proteins.
+```
+
+Everything added and avaliable so installation complete woooooooooo. 
+
+```{bash running interproscan}
+cd /scratch/projects/omics/ofav_genome/funannotate/interproscan
+interproscan.sh \
+
+```
+
+Now that we have run `interproscan` we can run `funannotate::annotate`
+
+```{bash funannotate annotate flags and parameters}
+
+```
+
+```{bash funannotate annotate run}
+
+```
+
+
+## 6. Additional Analyses
+### 6.1 - BUSCO of other coral genomes. 
+
+From looking at some manuscripts they report `busco` using `eukaryotes`, I have been more stringent and used the `-l metazoa_obd10`. As such rerunning these to get values for inclusion in the manuscript. 
+
+```{bash mcap}
+#!/bin/bash
+#BSUB -J busco_mcap
+#BSUB -q general
+#BSUB -W 48:00
+#BSUB -P omics
+#BSUB -o /scratch/projects/omics/ofav_genome/busco_results/other_coral/mcap_busco/busco_mcap.out
+#BSUB -e /scratch/projects/omics/ofav_genome/busco_results/other_coral/mcap_busco/busco_mcap.err
+#BSUB -n 5
+
+cd /scratch/projects/omics/ofav_genome/busco_results/other_coral/mcap_busco
+
+busco -m genome \
+-l metazoa_odb10 \
+-i Montipora_capitata_HIv3.assembly.fasta \
+-o res \
+--update-data \
+-f
+```
+
+```{bash pacu}
+#!/bin/bash
+#BSUB -J busco_pacu
+#BSUB -q general
+#BSUB -W 48:00
+#BSUB -P omics
+#BSUB -o /scratch/projects/omics/ofav_genome/busco_results/other_coral/mcap_busco/busco.out
+#BSUB -e /scratch/projects/omics/ofav_genome/busco_results/other_coral/mcap_busco/busco.err
+#BSUB -n 5
+
+cd /scratch/projects/omics/ofav_genome/busco_results/other_coral/pacu_busco
+
+busco -m genome \
+-l metazoa_odb10 \
+-i Pocillopora_acuta_HIv2.assembly.fasta \
+-o res \
+--update-data \
+-f
+```
+
+```{bash pcom}
+#!/bin/bash
+#BSUB -J busco_pcom
+#BSUB -q general
+#BSUB -W 48:00
+#BSUB -P omics
+#BSUB -o /scratch/projects/omics/ofav_genome/busco_results/other_coral/pcom_busco/busco.out
+#BSUB -e /scratch/projects/omics/ofav_genome/busco_results/other_coral/pcom_busco/busco.err
+#BSUB -n 5
+
+cd /scratch/projects/omics/ofav_genome/busco_results/other_coral/pcom_busco
+
+busco -m genome \
+-l metazoa_odb10 \
+-i Porites_compressa_HIv1.assembly.fasta \
+-o res \
+--update-data \
+-f
+```
+
+```{bash pcom}
+#!/bin/bash
+#BSUB -J busco_pmea
+#BSUB -q general
+#BSUB -W 48:00
+#BSUB -P omics
+#BSUB -o /scratch/projects/omics/ofav_genome/busco_results/other_coral/pmea_busco/busco.out
+#BSUB -e /scratch/projects/omics/ofav_genome/busco_results/other_coral/pmea_busco/busco.err
+#BSUB -n 5
+
+cd /scratch/projects/omics/ofav_genome/busco_results/other_coral/pmea_busco
+
+busco -m genome \
+-l metazoa_odb10 \
+-i Pocillopora_meandrina_HIv1.assembly.fasta \
+-o res \
+--update-data \
+-f
+```
+
+
+## 7. Other useful information 
+### 7.1 - File Formats
+Also, probably best to familiraise what .bed, .gtf. and .gff are. UCSC has a really good page for descriptions on file formats (https://genome.ucsc.edu/FAQ/FAQformat.html) as wella s Borad Institute (https://software.broadinstitute.org/software/igv/FileFormats). 
+
+*Browser Extensible Data (BED) format*
+provides a flexible way to define the data lines that are displayed in an annotation track. BED lines have three required fields and nine additional optional field
+
+First three required fields are
+1. `chrom` - The name of the chromosome or scaffold.
+2. `chromStart` - The starting position of the feature in the chromosome or scaffold. The first base in a chromosome is numbered 0.
+3. `chromEnd` - The ending position of the feature in the chromosome or scaffold. The `chromEnd` base is not included in the display of the feature, however, the number in position format will be represented. For example, the first 100 bases of chromosome 1 are defined as `chrom`=1, `chromStart`=0, `chromEnd`=100, and span the bases numbered 0-99 in our software (not 0-100), but will represent the position notation chr1:1-100. `chromStart` and `chromEnd` can be identical, creating a feature of length 0, commonly used for insertions. For example, use `chromStart`=0, `chromEnd`=0 to represent an insertion before the first nucleotide of a chromosome.
+
+The 9 additional optional BED fields are:
+4. `name` - Defines the name of the BED line. This label is displayed to the left of the BED line in the Genome Browser window when the track is open to full display mode or directly to the left of the item in pack mode.
+5. `score` - A score between 0 and 1000. If the track line `useScore` attribute is set to 1 for this annotation data set, the score value will determine the level of gray in which this feature is displayed (higher numbers = darker gray). This table shows the Genome Browser's translation of BED score values into shades of gray. 
+6. `strand` - Defines the strand. Either "." (=no strand) or "+" or "-".
+7. `thickStart` - The starting position at which the feature is drawn thickly (for example, the start codon in gene displays). When there is no thick part, `thickStart` and `thickEnd` are usually set to the `chromStart` position.
+8. `thickEnd` - The ending position at which the feature is drawn thickly (for example the stop codon in gene displays).
+9. `itemRgb` - An RGB value of the form R,G,B (e.g. 255,0,0). If the track line `itemRgb` attribute is set to "On", this RBG value will determine the display color of the data contained in this BED line. *NOTE*: It is recommended that a simple color scheme (eight colors or less) be used with this attribute to avoid overwhelming the color resources of the Genome Browser and your Internet browser.
+10. `blockCount` - The number of blocks (exons) in the BED line.
+11. `blockSizes` - A comma-separated list of the block sizes. The number of items in this list should correspond to `blockCount.`
+12. `blockStarts` - A comma-separated list of block starts. All of the `blockStart` positions should be calculated relative to `chromStart.` The number of items in this list should correspond to `blockCount.`
+
+In BED files with block definitions, the first `blockStart` value must be 0, so that the first block begins at `chromStart.` Similarly, the final `blockStart` position plus the final `blockSize` value must equal `chromEnd.` Blocks may not overlap.
+
+
+*General Feature Format (GFF)*
+GFF is based on the Sanger GFF2 specification. GFF have 9 required fields that *must* be tab-seperated. 
+
+1. `seqname` - The name of the sequence. *Must* be a chromosome or scaffold.
+2. `source` - The program that generated this feature.
+3. `feature` - The name of this type of feature. Some examples of standard feature types are "CDS" "start_codon" "stop_codon" and "exon". 
+4. `start` - The starting position of the feature in the sequence. The first base is numbered 1.
+5. `end` - The ending position of the feature (inclusive).
+6. `score` - A score between 0 and 1000. If the track line `useScore` attribute is set to 1 for this annotation data set, the score value will determine the level of gray in which this feature is displayed (higher numbers = darker gray). If there is no score value, enter ".".
+7. `strand` - Valid entries include "+", "-", or "." (for don't know/don't care).
+8. `frame` - If the feature is a coding exon, frame should be a number between 0-2 that represents the reading frame of the first base. If the feature is not a coding exon, the value should be ".".
+9. `group` - All lines with the same group are linked together into a single item.
+
+Different features in a gff file 
+`CDS` - 
+`start_codon` -
+`end_codon` -
+`exon` -
+
+
+*Gene Transfer Format (GTF)* 
+This is an extension, and backward compatible, with GFF2 (or GFF). *The first eight GTF fields are the same as GFF*. The `feature` field is the same as GFF, with the exception that it also includes the following optional values: `5UTR`, `3UTR`, `inter`, `inter_CNS`, and `intron_CNS.` The `group` field has been expanded into a list of attributes. Each attribute consists of a type/value pair. Attributes must end in a semi-colon, and be separated from any following attribute by exactly one space.
+
+1-3. Same as above in GFF
+9. `gene_id value` - A globally unique identifier for the genomic source of the sequence.
+10. `transcript_id value` - A globally unique identifier for the predicted transcript
+
+
+*Generic Feature Format version 3 (GFF3)*
+Newest format and should be backwards compatible with GFF. They are again nine-columns and *need to be tab delimited*. (https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md)
+
+1. `seqid` - The ID of the landmark used to establish the coordinate system for the current feature. IDs may contain any characters, but must escape any characters not in the set [a-zA-Z0-9.:^*$@!+_?-|]. In particular, IDs may not contain unescaped whitespace and must not begin with an unescaped ">".
+
+2. `source` - The source is a free text qualifier intended to describe the algorithm or operating procedure that generated this feature. Typically this is the name of a piece of software, such as `Genescan` or a database name (e.g. `GenBank`). In effect, the source is used to extend the feature ontology by adding a qualifier to the type creating a new composite type that is a subclass of the type in the type column.
+
+3. `type` - The type of the feature (previously called the `method`). This is constrained to be either a term from the Sequence Ontology or an SO accession number. The latter alternative is distinguished using the syntax SO:000000. In either case, it must be sequence_feature (SO:0000110) or an `is_a` child of it.
+
+4. `start` - The start of the feature are given in positive 1-based integer coordinates, relative to the landmark given in *column 1*. Start is always less than or equal to end. For features that cross the origin of a circular feature (e.g. most bacterial genomes, plasmids, and some viral genomes), the requirement for start to be less than or equal to end is satisfied by making end = the position of the end + the length of the landmark feature. For zero-length features, such as insertion sites, start equals end and the implied site is to the right of the indicated base in the direction of the landmark.
+
+5. `end` - The end coordinates of the feature are given in positive 1-based integer coordinates, relative to the landmark given in column one. Start is always less than or equal to end. For features that cross the origin of a circular feature (e.g. most bacterial genomes, plasmids, and some viral genomes), the requirement for start to be less than or equal to end is satisfied by making end = the position of the end + the length of the landmark feature. For zero-length features, such as insertion sites, start equals end and the implied site is to the right of the indicated base in the direction of the landmark.
+
+6. `score` - The score of the feature, a floating point number. As in earlier versions of the format, the semantics of the score are ill-defined. It is strongly recommended that `E-values` be used for sequence similarity features, and that `P-values` be used for ab initio gene prediction features.
+
+7. `strand` - The strand of the feature. + for positive strand (relative to the landmark), - for minus strand, and . for features that are not stranded. In addition, ? can be used for features whose strandedness is relevant, but unknown.
+
+8. `phase` - For features of type `CDS`, the phase indicates where the next codon begins relative to the 5' end (where the 5' end of the CDS is relative to the strand of the CDS feature) of the current `CDS` feature. For clarification the 5' end for CDS features on the plus strand is the feature's start and and the 5' end for CDS features on the minus strand is the feature's end. The phase is one of the integers 0, 1, or 2, indicating the number of bases forward from the start of the current CDS feature the next codon begins. A phase of "0" indicates that a codon begins on the first nucleotide of the CDS feature (i.e. 0 bases forward), a phase of "1" indicates that the codon begins at the second nucleotide of this CDS feature and a phase of "2" indicates that the codon begins at the third nucleotide of this region. Note that `Phase` in the context of a GFF3 `CDS` feature should not be confused with the similar concept of `frame` that is also a common concept in bioinformatics. `Frame` is generally calculated as a value for a given base relative to the start of the complete open reading frame (ORF) or the codon (e.g. modulo 3) while `CDS` phase describes the start of the next codon relative to a given `CDS` feature. The `phase` is *REQUIRED* for all CDS features.
+
+9. `attributes` - A list of feature attributes in the format *tag=value*. Multiple *tag=value* pairs are separated by *semicolons*. URL escaping rules are used for tags or values containing the following characters: ",=;". Spaces are allowed in this field, but tabs must be replaced with the %09 URL escape. `Attribute` values do not need to be and should not be quoted. The quotes should be included as part of the value by parsers and not stripped.
+  - `ID` - Indicates the `ID` of the feature. The ID attribute is required for features that have children (e.g. gene and mRNAs), or for those that span multiple lines, but             are optional for other features. IDs for each feature must be unique within the scope of the GFF file. In the case of discontinuous features (i.e. a single feature            that exists over multiple genomic locations) the same ID may appear on multiple lines. All lines that share an ID must collectively represent a single feature.
+  - `Name` - Display name for the feature. This is the name to be displayed to the user. Unlike IDs, there is no requirement that the Name be unique within the file.
+  - `Alias` - A secondary name for the feature. It is suggested that this tag be used whenever a secondary identifier for the feature is needed, such as locus names and                    accession numbers. Unlike ID, there is no requirement that Alias be unique within the file. 
+  - `Parent` - Indicates the `parent` of the feature. A parent ID can be used to group exons into transcripts, transcripts into genes, an so forth. A feature may have                       multiple parents. Parent can only be used to indicate a partof relationship.
+  - `Target` - Indicates the target of a nucleotide-to-nucleotide or protein-to-nucleotide alignment. The format of the value is `target_id start end [strand]`, where strand                is optional and may be "+" or "-". If the `target_id` contains spaces, they must be escaped as hex escape %20.
+  - `Gap` - The alignment of the feature to the target if the two are not collinear (e.g. contain gaps). The alignment format is inspired from the `CIGAR` format described in             the Exonerate documentation.
+  - `Derives_from` - Used to disambiguate the relationship between one feature and another when the relationship is a temporal one rather than a purely structural `part of`                       one. This is needed for polycistronic genes. See "PATHOLOGICAL CASES" for further discussion.
+  - `Note` - A free text note.
+  - `Dbxref` - A database cross reference. See the section "Ontology Associations and Db Cross References" for details on the format.
+  - `Ontology_term` - A cross reference to an ontology term. See the section "Ontology Associations and Db Cross References" for details.
+  - `Is_circular` - A flag to indicate whether a feature is circular. See extended discussion below.
+
+
+*GTF Vs GFF2 Vs GFF3*
+- GTF and GFF2 are identical. 
+- GFF3 is newer because bioinformatics were complaining and editing `GFF2` and `GTF` so much. 
